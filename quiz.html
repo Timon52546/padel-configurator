@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Welke racket past bij mij? · PadelForge</title>
+<meta name="description" content="Beantwoord 4 vragen en krijg meteen de juiste vorm, kern en materiaal voor jouw padelracket.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="pages.css">
+</head>
+<body>
+<nav class="nav scrolled">
+  <a href="/" class="logo"><i></i>Padel<b>Forge</b></a>
+  <div class="nav-links"><a href="quiz.html">Welke racket?</a><a href="clubs.html">Clubs</a><a href="info.html">Levering &amp; garantie</a></div>
+  <a href="configurator.html" class="btn primary">Ontwerp jouw racket →</a>
+</nav>
+<main class="page">
+
+<span class="eyebrow">Quiz</span>
+<h1>Welke racket past bij mij?</h1>
+<p>Vier korte vragen. Daarna zetten we de juiste vorm, kern en materiaal meteen klaar in de configurator.</p>
+<div id="quiz" style="margin-top:28px"></div>
+<style>.opt2{display:block;width:100%;text-align:left;margin-top:10px;padding:16px 18px;border-radius:14px;background:var(--panel);border:1px solid var(--line);color:var(--text);font-size:16px;font-weight:600;cursor:pointer}
+.opt2:hover{border-color:var(--accent)}.opt2 small{display:block;color:var(--muted);font-weight:500;margin-top:3px;font-size:13px}
+.prog{height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:20px}.prog i{display:block;height:100%;background:var(--accent);transition:width .3s}</style>
+<script>
+const Q=[
+ {k:'level',q:'Wat is je niveau?',o:[['beginner','Beginner','Ik speel minder dan een jaar'],['mid','Gemiddeld','Ik speel regelmatig en wil vooruit'],['pro','Gevorderd','Ik speel competitie of toernooien']]},
+ {k:'style',q:'Hoe speel je het liefst?',o:[['control','Controle','Geduldig, plaatsen, verdedigen'],['all','Allround','Een beetje van alles'],['power','Aanvallend','Smashen en de punten afmaken']]},
+ {k:'arm',q:'Hoe is het comfort van je arm en elleboog?',o:[['sensitive','Ik let er op','Ik wil een zachtere, vergevingsgezinde racket'],['normal','Geen probleem','Ik kan wat stijver aan']]},
+ {k:'budget',q:'Wat past bij je budget?',o:[['low','Zo scherp mogelijk','Basis met goede kern'],['mid','Gemiddeld','Goede balans'],['high','Het beste','Top-materiaal mag meer kosten']]}
+];
+const A={};let i=0;const el=document.getElementById('quiz');
+function show(){
+  if(i>=Q.length) return result();
+  const q=Q[i];
+  el.innerHTML='<div class="prog"><i style="width:'+(i/Q.length*100)+'%"></i></div><h2 style="margin-top:0">'+q.q+'</h2>'+q.o.map(o=>'<button class="opt2" data-v="'+o[0]+'">'+o[1]+'<small>'+o[2]+'</small></button>').join('');
+  el.querySelectorAll('.opt2').forEach(b=>b.onclick=()=>{A[q.k]=b.dataset.v;i++;show();});
+}
+function result(){
+  let shape=A.style==='control'?'round':A.style==='power'?'diamond':'teardrop';
+  if(A.level==='beginner'&&shape==='diamond') shape='teardrop';
+  let core=A.arm==='sensitive'||A.level==='beginner'?'soft':(A.style==='power'&&A.level==='pro'?'hard':'medium');
+  let material=A.budget==='low'?(A.arm==='sensitive'?'glass':'c3k'):A.budget==='high'&&A.level!=='beginner'?'c18k':A.budget==='high'?'c12k':'c3k';
+  const N={round:'rond',teardrop:'traan',diamond:'diamant'},C={soft:'soft EVA',medium:'medium EVA',hard:'hard EVA'},M={glass:'glasvezel',c3k:'carbon 3K',c12k:'carbon 12K',c18k:'carbon 18K'};
+  const why={round:'Een ronde vorm geeft de meeste controle en een grote sweet spot.',teardrop:'Een tranenvorm is een allrounder: controle en kracht in balans.',diamond:'Een diamantvorm legt het gewicht hoog in de kop voor maximale power.'};
+  const link=PF.link({shape,core,material});
+  el.innerHTML='<div class="prog"><i style="width:100%"></i></div><h2 style="margin-top:0">Jouw aanbeveling</h2><div class="cards"><div class="card"><b>'+N[shape]+'</b><p>Vorm</p></div><div class="card"><b>'+C[core]+'</b><p>Kern</p></div><div class="card"><b>'+M[material]+'</b><p>Blad</p></div></div><p style="margin-top:18px">'+why[shape]+'</p><p style="margin-top:22px"><a class="btn primary big" href="'+link+'">Open in de configurator →</a> <button class="btn big" onclick="i=0;show()">Opnieuw</button></p><p class="note">Dit is een richtlijn op basis van algemene tips, geen vaste regel. Twijfel je? Vraag het de assistent linksonder.</p>';
+}
+</script>
+</main>
+<footer><div class="logo"><i></i>Padel<b>Forge</b></div><div><a href="info.html">Info</a> · <a href="clubs.html">Clubs</a> · <a href="quiz.html">Quiz</a> · © 2026 PadelForge</div></footer>
+<script src="site.js"></script>
+<script>show();</script></body></html>
