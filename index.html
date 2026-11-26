@@ -80,6 +80,23 @@
   .cta-band .btn{background:var(--accent-ink);color:var(--accent);border-color:var(--accent-ink)}
   .cta-band::after{content:"";position:absolute;right:-80px;top:-80px;width:320px;height:320px;border-radius:50%;border:50px solid rgba(0,0,0,.07)}
 
+  .reviews-wrap{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .rev-grid{display:grid;gap:14px}
+  .rev{border:1px solid var(--line);border-radius:var(--radius);padding:24px;background:var(--panel)}
+  .rev .stars{color:var(--accent);letter-spacing:3px;font-size:16px}
+  .rev p{color:#cfd4dd;line-height:1.6;margin:12px 0}
+  .rev small{color:var(--muted)}
+  .rev-empty{border:1px dashed var(--line2);border-radius:var(--radius);padding:36px;display:flex;flex-direction:column;justify-content:center;gap:12px}
+  .rev-empty h3{font-family:var(--display);font-size:26px;letter-spacing:-.6px}
+  .rev-empty p{color:var(--muted);line-height:1.6}
+  .rev-form{border:1px solid var(--line);border-radius:var(--radius);padding:28px;background:var(--panel);display:flex;flex-direction:column;gap:12px}
+  .rev-form h3{font-family:var(--display);font-size:22px}
+  .rev-form input,.rev-form textarea{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--text);padding:12px 13px;border-radius:12px;font:inherit;font-size:15px}
+  .rev-form textarea{min-height:110px;resize:vertical}
+  .rev-form input:focus,.rev-form textarea:focus{outline:none;border-color:var(--accent)}
+  .star-pick{display:flex;gap:4px}
+  .star-pick button{background:none;border:0;font-size:28px;color:var(--line2);cursor:pointer;padding:0 2px;line-height:1}
+  .star-pick button.on{color:var(--accent)}
   .faq{max-width:860px}
   details{border-bottom:1px solid var(--line);padding:22px 0}
   summary{cursor:pointer;font-family:var(--display);font-size:20px;list-style:none;display:flex;justify-content:space-between;gap:20px}
@@ -98,6 +115,7 @@
     .collection{grid-template-columns:repeat(2,1fr)}
     .features{grid-template-columns:1fr}
     .feat.big{grid-row:auto}
+    .reviews-wrap{grid-template-columns:1fr}
     .steps{grid-template-columns:1fr}
   }
 </style>
@@ -110,6 +128,7 @@
     <a href="#hoe">Hoe het werkt</a>
     <a href="#collectie">Collectie</a>
     <a href="#features">Waarom</a>
+    <a href="#reviews">Reviews</a>
     <a href="#faq">FAQ</a>
   </div>
   <a href="configurator.html" class="btn primary">Ontwerp jouw racket →</a>
@@ -180,6 +199,26 @@
   </div>
 </section>
 
+<section class="block" id="reviews" style="padding-top:0">
+  <div class="head reveal">
+    <div><span class="eyebrow">Reviews</span><h2>Wat spelers zeggen.</h2></div>
+    <p id="revSummary">Alleen echte reviews van echte klanten.</p>
+  </div>
+  <div class="reviews-wrap">
+    <div id="revList" class="rev-grid reveal">
+      <div class="rev-empty"><h3>Nog geen reviews</h3><p>PadelForge is net gestart. Speel jij al met een racket van ons? Laat als eerste weten wat je ervan vindt.</p></div>
+    </div>
+    <form class="rev-form reveal" id="revForm">
+      <h3>Schrijf een review</h3>
+      <div class="star-pick" id="starPick"></div>
+      <input id="revName" placeholder="Je naam" required maxlength="40">
+      <textarea id="revText" placeholder="Hoe speelt je racket? Wat vind je van het design?" required maxlength="600"></textarea>
+      <button class="btn primary" type="submit" style="align-self:flex-start">Verstuur review →</button>
+      <small style="color:var(--muted)">Je mailprogramma opent met je review. Na controle komt hij op de site.</small>
+    </form>
+  </div>
+</section>
+
 <div class="cta-band reveal">
   <h2>Klaar om op te vallen op het terrein?</h2>
   <a href="configurator.html" class="btn big">Ontwerp jouw racket →</a>
@@ -225,7 +264,7 @@ document.getElementById('heroLoader').remove();
 
 // Collection cards
 const wrap = document.getElementById('collection');
-Object.entries(PRESETS).forEach(([id, cfg], i) => {
+Object.entries(PRESETS).filter(([id]) => id !== 'voorbeeld').forEach(([id, cfg], i) => {
   const a = document.createElement('a');
   a.className = 'card reveal';
   a.href = 'configurator.html#preset=' + id;
@@ -241,6 +280,26 @@ Object.entries(PRESETS).forEach(([id, cfg], i) => {
   a.addEventListener('pointerdown', () => moved = false);
   a.addEventListener('pointermove', e => { if (e.buttons) moved = true; });
   a.addEventListener('click', e => { if (moved) e.preventDefault(); });
+});
+
+// Reviews: only real reviews from reviews.json
+const REVIEW_EMAIL = 'boonen.timon@outlook.com';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+fetch('reviews.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : []).then(list => {
+  if (!Array.isArray(list) || !list.length) return;
+  const avg = list.reduce((a, r) => a + (+r.stars || 0), 0) / list.length;
+  document.getElementById('revSummary').textContent = `${avg.toFixed(1)} / 5 gemiddeld op basis van ${list.length} review${list.length > 1 ? 's' : ''}.`;
+  document.getElementById('revList').innerHTML = list.map(r => `<div class="rev"><div class="stars">${'★'.repeat(Math.round(r.stars))}${'☆'.repeat(5 - Math.round(r.stars))}</div><p>${esc(r.text)}</p><small>${esc(r.name)}${r.date ? ' · ' + esc(r.date) : ''}</small></div>`).join('');
+}).catch(() => {});
+let stars = 5;
+const sp = document.getElementById('starPick');
+const drawStars = () => { sp.innerHTML = ''; for (let i = 1; i <= 5; i++) { const b = document.createElement('button'); b.type = 'button'; b.textContent = '★'; b.className = i <= stars ? 'on' : ''; b.setAttribute('aria-label', i + ' sterren'); b.onclick = () => { stars = i; drawStars(); }; sp.appendChild(b); } };
+drawStars();
+document.getElementById('revForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = document.getElementById('revName').value.trim(), text = document.getElementById('revText').value.trim();
+  const body = `Naam: ${name}\nSterren: ${stars}/5\n\n${text}`;
+  location.href = `mailto:${REVIEW_EMAIL}?subject=${encodeURIComponent('Review PadelForge - ' + stars + ' sterren')}&body=${encodeURIComponent(body)}`;
 });
 </script>
 </body>
