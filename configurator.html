@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Configurator · PadelForge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<style>
+  body{height:100vh;overflow:hidden}
+  .nav{position:relative;background:var(--bg);border-color:var(--line)}
+  .nav .actions{display:flex;gap:8px}
+  .app{display:grid;grid-template-columns:1fr 430px;height:calc(100vh - 71px)}
+  .stage{position:relative;background:radial-gradient(900px 600px at 50% 42%,#1b1f29 0%,var(--bg) 70%);overflow:hidden}
+  .stage::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.25;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:56px 56px;mask-image:radial-gradient(ellipse at 50% 45%,#000 10%,transparent 65%)}
+  #viewer{position:absolute;inset:0;z-index:1;cursor:grab}
+  #viewer:active{cursor:grabbing}
+  .stage-top{position:absolute;top:20px;left:24px;z-index:2;pointer-events:none}
+  .stage-top h1{font-family:var(--display);font-size:30px;letter-spacing:-1px}
+  .stage-top p{color:var(--muted);font-size:13px;margin-top:4px}
+  .views{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:2;display:flex;gap:6px;padding:6px;border-radius:999px;
+    background:rgba(18,20,27,.8);border:1px solid var(--line);backdrop-filter:blur(10px)}
+  .views button{background:none;border:0;color:var(--muted);padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer}
+  .views button:hover{color:var(--text)}
+  .views button.on{background:var(--accent);color:var(--accent-ink)}
+
+  .panel{border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+  .tabs{display:flex;border-bottom:1px solid var(--line);padding:0 10px;overflow-x:auto;flex-shrink:0}
+  .tabs button{background:none;border:0;color:var(--muted);padding:16px 9px;font-size:12.5px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+  .tabs button.on{color:var(--text);border-color:var(--accent)}
+  .tabs button span{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--line);font-size:10px;margin-right:6px}
+  .tabs button.on span{background:var(--accent);color:var(--accent-ink)}
+  .scroll{flex:1;overflow-y:auto;padding:22px 24px}
+  .pane{display:none}
+  .pane.on{display:block;animation:fade .3s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}}
+  .sec{margin-bottom:26px}
+  .sec h3{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+  .sec h3 em{font-style:normal;color:var(--text);letter-spacing:0;text-transform:none;font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .grid.two{grid-template-columns:repeat(2,1fr)}
+  .grid.four{grid-template-columns:repeat(4,1fr)}
+  .grid.five{grid-template-columns:repeat(5,1fr)}
+  .opt{border:1px solid var(--line);background:var(--bg2);color:var(--text);padding:12px 10px;border-radius:12px;cursor:pointer;font-size:13px;font-weight:600;
+    display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;transition:border-color .15s}
+  .opt small{color:var(--muted);font-weight:500;font-size:11px}
+  .opt:hover{border-color:var(--line2)}
+  .opt.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .opt canvas{width:100%;height:auto;border-radius:6px}
+  .opt svg{width:30px;height:30px}
+  .slider{margin-bottom:16px}
+  .slider label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;color:#cfd4dd}
+  .slider label span{color:var(--muted);font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .color-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .color-row:last-child{border:0}
+  .color-row .name{flex:1;font-size:14px;font-weight:600}
+  .color-row .name small{display:block;color:var(--muted);font-size:12px;font-weight:500;font-family:'JetBrains Mono',monospace}
+  .sw-wrap{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;max-width:200px}
+  .sw{width:22px;height:22px;border-radius:50%;border:0;cursor:pointer;outline:1px solid var(--line2);outline-offset:1px}
+  .sw.on{outline:2px solid var(--accent)}
+  .picker{position:relative;width:38px;height:38px;border-radius:12px;overflow:hidden;border:1px solid var(--line2);flex-shrink:0;cursor:pointer}
+  .picker input{position:absolute;inset:-8px;width:60px;height:60px;border:0;cursor:pointer;padding:0}
+  .editor-wrap{position:relative;border:1px solid var(--line);border-radius:14px;background:var(--bg2);padding:10px;display:flex;justify-content:center}
+  #editor{max-height:340px;width:auto;max-width:100%;touch-action:none;cursor:pointer}
+  .editor-help{font-size:12px;color:var(--muted);margin-top:8px;text-align:center}
+  .sel-tools{display:none;margin-top:12px;padding:14px;border:1px solid var(--line2);border-radius:14px;background:var(--bg2)}
+  .sel-tools.on{display:block}
+  .sel-tools .row{display:flex;gap:8px;align-items:center;margin-top:10px}
+  .small-btn{border:1px solid var(--line2);background:var(--panel);color:var(--text);padding:8px 11px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer}
+  .small-btn:hover{border-color:var(--muted)}
+  .small-btn.danger{color:#ff6b5b}
+  .upload{display:flex;align-items:center;justify-content:center;gap:8px;border:1px dashed var(--line2);border-radius:12px;padding:14px;cursor:pointer;color:#cfd4dd;font-size:13px;font-weight:600}
+  .upload:hover{border-color:var(--accent);color:var(--accent)}
+  .upload input{display:none}
+  input[type=text],select{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--text);padding:12px 13px;border-radius:12px;font-size:15px;font-family:inherit}
+  input[type=text]:focus,select:focus{outline:none;border-color:var(--accent)}
+  .toggle{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;cursor:pointer;background:var(--bg2);font-size:14px;font-weight:600}
+  .toggle small{display:block;color:var(--muted);font-size:12px;font-weight:500;margin-top:2px}
+  .toggle input{accent-color:var(--accent);width:18px;height:18px}
+  .foot{border-top:1px solid var(--line);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--panel);flex-shrink:0}
+  .price{font-family:var(--display);font-size:32px;font-weight:700;letter-spacing:-1px;line-height:1}
+  .foot small{color:var(--muted);font-size:12px;display:block;margin-top:4px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
+  .modal.open{display:flex}
+  .modal .card{background:var(--panel);border:1px solid var(--line2);border-radius:22px;max-width:520px;width:100%;padding:28px;max-height:90vh;overflow:auto}
+  .modal h2{font-family:var(--display);font-size:28px;letter-spacing:-1px}
+  .modal img{width:100%;border-radius:14px;background:radial-gradient(circle,#1d212b,var(--bg2));margin:16px 0}
+  .modal ul{list-style:none;margin:6px 0 20px}
+  .modal li{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .modal li span:last-child{color:var(--muted);text-align:right}
+  .modal .row{display:flex;justify-content:space-between;gap:10px}
+  .dot{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:-1px;margin-right:6px;border:1px solid var(--line2)}
+  @media (max-width:900px){
+    body{height:auto;overflow:auto}
+    .app{grid-template-columns:1fr;height:auto}
+    .stage{height:58vh}
+    .panel{border-left:0;border-top:1px solid var(--line)}
+    .foot{position:sticky;bottom:0}
+    .nav .actions .hide-sm{display:none}
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="logo"><i></i>Padel<b>Forge</b></a>
+  <div class="actions">
+    <button class="btn hide-sm" id="randomBtn">🎲 Verras me</button>
+    <button class="btn hide-sm" id="downloadBtn">⤓ Afbeelding</button>
+    <button class="btn" id="shareBtn">🔗 Deel ontwerp</button>
+  </div>
+</nav>
+
+<div class="app">
+  <section class="stage">
+    <div class="stage-top"><h1 id="titleName">Jouw racket</h1><p>Sleep om te draaien · scroll om te zoomen</p></div>
+    <div id="viewer"><div class="loader" id="loader">3D laden…</div></div>
+    <div class="views">
+      <button data-view="front" class="on">Voor</button>
+      <button data-view="angle">Schuin</button>
+      <button data-view="side">Zij</button>
+      <button data-view="back">Achter</button>
+      <button id="spinBtn">↻ Auto</button>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <div class="tabs" id="tabs">
+      <button data-tab="shape" class="on"><span>1</span>Vorm</button>
+      <button data-tab="colors"><span>2</span>Kleuren</button>
+      <button data-tab="design"><span>3</span>Design</button>
+      <button data-tab="text"><span>4</span>Tekst</button>
+      <button data-tab="specs"><span>5</span>Specs</button>
+    </div>
+
+    <div class="scroll">
+      <!-- 1 VORM -->
+      <div class="pane on" data-pane="shape">
+        <div class="sec"><h3>Basisvorm <em id="lblShape"></em></h3><div class="grid" id="shapeOpts"></div></div>
+        <div class="sec">
+          <h3>Maak je eigen vorm</h3>
+          <div class="slider"><label>Breedte <span id="vWidth"></span></label><input type="range" id="sWidth" min="0.76" max="0.98" step="0.005"></div>
+          <div class="slider"><label>Rondheid ↔ hoekig <span id="vRound"></span></label><input type="range" id="sRound" min="1.5" max="3.2" step="0.02"></div>
+          <div class="slider"><label>Balans (controle ↔ power) <span id="vTop"></span></label><input type="range" id="sTop" min="-0.1" max="0.85" step="0.01"></div>
+        </div>
+        <div class="sec"><h3>Gaatjespatroon</h3><div class="grid two" id="holeOpts"></div></div>
+      </div>
+
+      <!-- 2 KLEUREN -->
+      <div class="pane" data-pane="colors">
+        <div class="sec"><h3>Kies elke kleur die je wilt</h3><div id="colorRows"></div></div>
+      </div>
+
+      <!-- 3 DESIGN -->
+      <div class="pane" data-pane="design">
+        <div class="sec"><h3>Patroon <em id="lblDesign"></em></h3><div class="grid four" id="designOpts"></div></div>
+        <div class="sec">
+          <h3>Vormen toevoegen <em>+ €3 per stuk</em></h3>
+          <div class="grid five" id="stickerOpts"></div>
+        </div>
+        <div class="sec">
+          <label class="upload">⬆ Upload je eigen logo of afbeelding (+ €15)<input type="file" id="logoInput" accept="image/*"></label>
+        </div>
+        <div class="sec">
+          <h3>Ontwerp-editor</h3>
+          <div class="editor-wrap"><canvas id="editor"></canvas></div>
+          <p class="editor-help">Klik op een vorm om hem te selecteren · sleep om te verplaatsen</p>
+          <div class="sel-tools" id="selTools">
+            <div class="row" style="margin-top:0;justify-content:space-between">
+              <strong style="font-size:13px" id="selName">Vorm</strong>
+              <div style="display:flex;gap:6px"><button class="small-btn" id="dupBtn">Dupliceer</button><button class="small-btn" id="frontBtn">Naar voren</button><button class="small-btn danger" id="delBtn">Verwijder</button></div>
+            </div>
+            <div class="slider" style="margin-top:14px"><label>Grootte</label><input type="range" id="selSize" min="0.04" max="0.7" step="0.005"></div>
+            <div class="slider"><label>Draaien</label><input type="range" id="selRot" min="-180" max="180" step="1"></div>
+            <div class="row" id="selColorRow"><span style="font-size:13px;flex:1">Kleur</span><div class="sw-wrap" id="selSw"></div><label class="picker"><input type="color" id="selColor"></label></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 TEKST -->
+      <div class="pane" data-pane="text">
+        <div class="sec"><h3>Jouw tekst <em>+ €12</em></h3><input type="text" id="textInput" maxlength="14" placeholder="Bv. je naam of bijnaam"></div>
+        <div class="sec"><h3>Lettertype</h3><div class="grid two" id="fontOpts"></div></div>
+        <div class="sec">
+          <div class="slider"><label>Grootte</label><input type="range" id="tSize" min="0.04" max="0.2" step="0.002"></div>
+          <div class="slider"><label>Positie (boven ↔ onder)</label><input type="range" id="tY" min="0.1" max="0.92" step="0.005"></div>
+          <label class="toggle">Verticaal plaatsen<input type="checkbox" id="tVert"></label>
+        </div>
+        <div class="sec"><h3>Tekstkleur</h3><div class="color-row" style="border:0;padding:0"><div class="sw-wrap" style="max-width:none;justify-content:flex-start;flex:1" id="textSw"></div><label class="picker"><input type="color" id="textColor"></label></div></div>
+      </div>
+
+      <!-- 5 SPECS -->
+      <div class="pane" data-pane="specs">
+        <div class="sec"><h3>Materiaal blad <em id="lblMat"></em></h3><div class="grid two" id="matOpts"></div></div>
+        <div class="sec"><h3>Kern <em id="lblCore"></em></h3><div class="grid" id="coreOpts"></div></div>
+        <div class="sec"><h3>Afwerking <em id="lblFinish"></em></h3><div class="grid" id="finishOpts"></div></div>
+        <div class="sec"><h3>Extra's</h3>
+          <label class="toggle"><span>Frame-protector<small>Beschermt de bovenrand · + €9</small></span><input type="checkbox" id="exProtector"></label>
+          <label class="toggle"><span>3 extra overgrips<small>In je gripkleur · + €6</small></span><input type="checkbox" id="exOvergrip"></label>
+          <label class="toggle"><span>Thermo-hoes<small>Beschermt tegen hitte en kou · + €15</small></span><input type="checkbox" id="exCover"></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div><div class="price" id="price">€0</div><small id="specLine"></small></div>
+      <button class="btn primary big" id="orderBtn">Bestellen →</button>
+    </div>
+  </aside>
+</div>
+
+<div class="modal" id="modal">
+  <div class="card">
+    <h2>Jouw ontwerp</h2>
+    <img id="orderImg" alt="Jouw racket">
+    <ul id="summary"></ul>
+    <div class="row">
+      <button class="btn" id="closeModal">Verder aanpassen</button>
+      <button class="btn primary" id="copyOrder">Bestelaanvraag kopiëren</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { RacketViewer, SHAPES, DESIGNS, STICKERS, PRESETS, drawDesign, drawSticker, textureSize, outlineInCanvas } from './racket.js';
+
+const $ = id => document.getElementById(id);
+const PALETTE = ['#0d0f14','#ffffff','#c6ff3d','#ff4d2e','#ff7a2e','#ffcc00','#ff3d9a','#8a5cff','#2e7bff','#5ee7ff','#00c2a8','#9aa3b2'];
+const MATERIALS = { glass:{name:'Glasvezel',note:'Comfort · −€20',price:-20,w:-5}, c3k:{name:'Carbon 3K',note:'Inbegrepen',price:0,w:0}, c12k:{name:'Carbon 12K',note:'+ €30',price:30,w:-5}, c18k:{name:'Carbon 18K',note:'+ €50',price:50,w:-10} };
+const CORES = { soft:{name:'Soft EVA',note:'Comfort',price:0}, medium:{name:'Medium EVA',note:'Balans',price:0}, hard:{name:'Hard EVA',note:'+ €10',price:10} };
+const FINISHES = { gloss:{name:'Glans',note:'Inbegrepen',price:0}, matte:{name:'Mat',note:'Inbegrepen',price:0}, metal:{name:'Metallic',note:'+ €10',price:10} };
+const FONTS = { grotesk:{name:'Modern',css:'700 20px "Space Grotesk"'}, heavy:{name:'Bold',css:'900 20px Inter'}, serif:{name:'Klassiek',css:'italic 700 20px Georgia'}, mono:{name:'Tech',css:'700 18px "JetBrains Mono"'} };
+const BASE = 139;
+
+const DEFAULT = {
+  shape:'teardrop', shapeParams:{...SHAPES.teardrop}, holes:'small', design:'stripes',
+  face:'#2e7bff', accent:'#c6ff3d', accent2:'#ffffff', frame:'#0d0f14', grip:'#0d0f14',
+  text:'', textColor:'#ffffff', font:'grotesk', textSize:0.1, textY:0.5, textVertical:false,
+  material:'c3k', core:'medium', finish:'gloss', protector:false, overgrip:false, cover:false, stickers:[]
+};
+let state = structuredClone(DEFAULT);
+const images = {};
+let selected = -1;
+
+// ---------- load from URL ----------
+function loadHash(){
+  const h = location.hash.slice(1);
+  if(!h) return;
+  if(h.startsWith('preset=')){
+    const p = PRESETS[h.slice(7)];
+    if(p){ state = {...structuredClone(DEFAULT), ...structuredClone(p)}; delete state.label; }
+    return;
+  }
+  try { state = {...structuredClone(DEFAULT), ...JSON.parse(decodeURIComponent(escape(atob(h))))}; } catch(e){}
+}
+function saveHash(){
+  const s = {...state, stickers: state.stickers.filter(x => x.type !== 'image')};
+  try { history.replaceState(null, '', '#' + btoa(unescape(encodeURIComponent(JSON.stringify(s))))); } catch(e){}
+}
+loadHash();
+
+// ---------- design canvas (texture) ----------
+const tex = document.createElement('canvas');
+function sizeTexture(){ const s = textureSize(state.shapeParams); tex.width = s.w; tex.height = s.h; }
+sizeTexture();
+
+// ---------- 3D ----------
+await document.fonts.ready;
+const viewer = new RacketViewer($('viewer'), { autoRotate:false, preserve:true, distance:12, stopRotateOnTouch:true });
+$('loader').remove();
+
+// ---------- UI builders ----------
+function optButtons(el, data, key, render){
+  el.innerHTML = '';
+  Object.entries(data).forEach(([id,o]) => {
+    const b = document.createElement('button');
+    b.className = 'opt'; b.dataset.id = id;
+    b.innerHTML = (render ? render(id,o) : '') + `<span>${o.name}</span>` + (o.note ? `<small>${o.note}</small>` : '');
+    b.onclick = () => { key(id); update(); };
+    el.appendChild(b);
+  });
+}
+const shapeIcon = id => {
+  const p = SHAPES[id]; const pts = outlineInCanvas(p, 26, 30);
+  return `<svg viewBox="-2 -2 30 34"><path d="M${pts.map(q=>q.map(n=>n.toFixed(1)).join(' ')).join('L')}Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+};
+optButtons($('shapeOpts'), SHAPES, id => { state.shape = id; state.shapeParams = {...SHAPES[id]}; }, shapeIcon);
+optButtons($('holeOpts'), {small:{name:'Klein & veel',note:'Meer controle'}, big:{name:'Groot & minder',note:'Meer power'}}, id => state.holes = id);
+optButtons($('matOpts'), MATERIALS, id => state.material = id);
+optButtons($('coreOpts'), CORES, id => state.core = id);
+optButtons($('finishOpts'), FINISHES, id => state.finish = id);
+optButtons($('fontOpts'), FONTS, id => state.font = id, (id,o) => `<span style="font:${o.css};font-size:20px">Aa</span>`);
+
+// pattern buttons with live mini previews
+function buildDesignOpts(){
+  const el = $('designOpts'); el.innerHTML = '';
+  Object.entries(DESIGNS).forEach(([id,o]) => {
+    const b = document.createElement('button'); b.className = 'opt'; b.dataset.id = id;
+    const c = document.createElement('canvas'); c.width = 60; c.height = 74;
+    b.appendChild(c);
+    b.insertAdjacentHTML('beforeend', `<span>${o.name}</span><small>${o.price ? '+ €'+o.price : 'Inbegrepen'}</small>`);
+    b.onclick = () => { state.design = id; update(); };
+    el.appendChild(b);
+  });
+}
+function drawDesignThumbs(){
+  document.querySelectorAll('#designOpts .opt').forEach(b => {
+    const c = b.querySelector('canvas'), g = c.getContext('2d');
+    drawDesign(g, c.width, c.height, {...state, design:b.dataset.id, stickers:[], text:''}, images);
+  });
+}
+buildDesignOpts();
+
+// sticker buttons
+STICKERS.forEach(type => {
+  const b = document.createElement('button'); b.className = 'opt'; b.title = type;
+  const c = document.createElement('canvas'); c.width = 44; c.height = 44;
+  drawSticker(c.getContext('2d'), {type, x:.5, y:.5, size:.75, rot:0, color:'#f2f4f8'}, 44, 44);
+  b.appendChild(c);
+  b.onclick = () => {
+    state.stickers.push({type, x:.5, y:.4 + Math.random()*.2, size: type === 'stripe' ? .14 : .2, rot:0, color: state.accent2 === state.face ? state.accent : state.accent2});
+    selected = state.stickers.length - 1; update();
+  };
+  $('stickerOpts').appendChild(b);
+});
+
+// logo upload
+$('logoInput').onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  const img = new Image();
+  img.onload = () => {
+    const id = 'img' + Date.now(); images[id] = img;
+    state.stickers.push({type:'image', imgId:id, x:.5, y:.35, size:.32, rot:0});
+    selected = state.stickers.length - 1; update(); toast('Logo toegevoegd, sleep het naar de juiste plek');
+  };
+  img.src = URL.createObjectURL(f);
+  e.target.value = '';
+};
+
+// color rows
+const COLOR_FIELDS = [['face','Blad','Basiskleur van het blad'],['accent','Accent 1','Kleur van het patroon'],['accent2','Accent 2','Tweede patroonkleur'],['frame','Frame','Rand, hals en eindkap'],['grip','Grip','Kleur van het handvat']];
+function swatches(el, onPick){
+  el.innerHTML = '';
+  PALETTE.forEach(c => { const s = document.createElement('button'); s.className='sw'; s.style.background=c; s.dataset.c=c; s.onclick=()=>{ onPick(c); update(); }; el.appendChild(s); });
+}
+COLOR_FIELDS.forEach(([k,name,desc]) => {
+  const row = document.createElement('div'); row.className = 'color-row';
+  row.innerHTML = `<div class="name">${name}<small data-hex="${k}"></small></div><div class="sw-wrap"></div><label class="picker"><input type="color" data-k="${k}"></label>`;
+  swatches(row.querySelector('.sw-wrap'), c => state[k] = c);
+  row.querySelector('input').oninput = e => { state[k] = e.target.value; update(); };
+  row.querySelector('.sw-wrap').dataset.k = k;
+  $('colorRows').appendChild(row);
+});
+swatches($('textSw'), c => state.textColor = c); $('textSw').dataset.k = 'textColor';
+$('textColor').oninput = e => { state.textColor = e.target.value; update(); };
+swatches($('selSw'), c => { if(state.stickers[selected]) state.stickers[selected].color = c; });
+$('selColor').oninput = e => { if(state.stickers[selected]){ state.stickers[selected].color = e.target.value; update(); } };
+
+// shape sliders
+const bindRange = (id, get, set) => { $(id).oninput = e => { set(parseFloat(e.target.value)); update(); }; return () => $(id).value = get(); };
+const syncers = [
+  bindRange('sWidth', () => state.shapeParams.width, v => state.shapeParams.width = v),
+  bindRange('sRound', () => state.shapeParams.roundness, v => state.shapeParams.roundness = v),
+  bindRange('sTop', () => state.shapeParams.topBias, v => state.shapeParams.topBias = v),
+  bindRange('tSize', () => state.textSize, v => state.textSize = v),
+  bindRange('tY', () => state.textY, v => state.textY = v),
+  bindRange('selSize', () => state.stickers[selected]?.size ?? .2, v => { if(state.stickers[selected]) state.stickers[selected].size = v; }),
+  bindRange('selRot', () => state.stickers[selected]?.rot ?? 0, v => { if(state.stickers[selected]) state.stickers[selected].rot = v; })
+];
+$('textInput').oninput = e => { state.text = e.target.value; update(); };
+$('tVert').onchange = e => { state.textVertical = e.target.checked; update(); };
+['Protector','Overgrip','Cover'].forEach(n => $('ex'+n).onchange = e => { state[n.toLowerCase()] = e.target.checked; update(); });
+
+// selection tools
+$('delBtn').onclick = () => { state.stickers.splice(selected,1); selected = -1; update(); };
+$('dupBtn').onclick = () => { const s = {...state.stickers[selected], x: Math.min(.9, state.stickers[selected].x + .06), y: Math.min(.9, state.stickers[selected].y + .06)}; state.stickers.push(s); selected = state.stickers.length - 1; update(); };
+$('frontBtn').onclick = () => { const [s] = state.stickers.splice(selected,1); state.stickers.push(s); selected = state.stickers.length - 1; update(); };
+
+// ---------- 2D editor ----------
+const ed = $('editor'), eg = ed.getContext('2d');
+function drawEditor(){
+  ed.width = Math.round(tex.width / 2); ed.height = Math.round(tex.height / 2);
+  const w = ed.width, h = ed.height;
+  eg.clearRect(0,0,w,h);
+  eg.drawImage(tex, 0, 0, w, h);
+  const pts = outlineInCanvas(state.shapeParams, w, h);
+  // dim outside of the head
+  eg.save(); eg.fillStyle = 'rgba(14,16,22,.82)';
+  eg.beginPath(); eg.rect(0,0,w,h); eg.moveTo(...pts[0]); pts.forEach(p => eg.lineTo(...p)); eg.closePath(); eg.fill('evenodd');
+  eg.strokeStyle = 'rgba(255,255,255,.35)'; eg.lineWidth = 2; eg.beginPath(); pts.forEach((p,i) => i ? eg.lineTo(...p) : eg.moveTo(...p)); eg.closePath(); eg.stroke();
+  eg.restore();
+  const s = state.stickers[selected];
+  if(s){
+    const r = s.size * h * (s.type === 'stripe' ? 1.1 : .55);
+    eg.save(); eg.translate(s.x*w, s.y*h); eg.rotate(s.rot*Math.PI/180);
+    eg.setLineDash([6,5]); eg.strokeStyle = '#c6ff3d'; eg.lineWidth = 2;
+    eg.strokeRect(-r, -(s.type === 'stripe' ? s.size*h*.25 : r), r*2, (s.type === 'stripe' ? s.size*h*.5 : r*2)); eg.restore();
+  }
+}
+let drag = null;
+function edPos(e){ const r = ed.getBoundingClientRect(); return { x:(e.clientX - r.left)/r.width, y:(e.clientY - r.top)/r.height }; }
+ed.addEventListener('pointerdown', e => {
+  const p = edPos(e), ar = ed.width/ed.height; selected = -1;
+  for(let i = state.stickers.length - 1; i >= 0; i--){
+    const s = state.stickers[i];
+    const dx = (p.x - s.x) * ar, dy = p.y - s.y;
+    const hit = s.type === 'stripe' ? Math.abs(dx) < s.size*1.1 && Math.abs(dy) < s.size*.3 : Math.hypot(dx,dy) < s.size*.6;
+    if(hit){ selected = i; drag = { dx: p.x - s.x, dy: p.y - s.y }; ed.setPointerCapture(e.pointerId); break; }
+  }
+  update(false);
+});
+ed.addEventListener('pointermove', e => {
+  if(!drag || !state.stickers[selected]) return;
+  const p = edPos(e), s = state.stickers[selected];
+  s.x = Math.max(0, Math.min(1, p.x - drag.dx)); s.y = Math.max(0, Math.min(1, p.y - drag.dy));
+  update(false);
+});
+ed.addEventListener('pointerup', () => { drag = null; saveHash(); });
+
+// ---------- price ----------
+function price(){
+  let p = BASE + MATERIALS[state.material].price + CORES[state.core].price + FINISHES[state.finish].price + DESIGNS[state.design].price;
+  state.stickers.forEach(s => p += s.type === 'image' ? 15 : 3);
+  if(state.text.trim()) p += 12;
+  if(state.protector) p += 9; if(state.overgrip) p += 6; if(state.cover) p += 15;
+  return p;
+}
+const weight = () => 355 + Math.round((state.shapeParams.topBias) * 12) + MATERIALS[state.material].w + (state.protector ? 5 : 0);
+const shapeLabel = () => { const p = state.shapeParams, b = SHAPES[state.shape]; const custom = Math.abs(p.width-b.width)+Math.abs(p.roundness-b.roundness)+Math.abs(p.topBias-b.topBias) > .01; return custom ? 'Eigen vorm' : b.name; };
+
+// ---------- master update ----------
+let lastShapeKey = '';
+function update(full = true){
+  const key = JSON.stringify(state.shapeParams);
+  if(key !== lastShapeKey){ lastShapeKey = key; sizeTexture(); }
+  drawDesign(tex.getContext('2d'), tex.width, tex.height, state, images);
+  viewer.update(state, tex);
+  drawEditor();
+
+  const mark = (sel, val) => document.querySelectorAll(sel + ' .opt').forEach(b => b.classList.toggle('on', b.dataset.id === val));
+  mark('#shapeOpts', shapeLabel() === 'Eigen vorm' ? '' : state.shape); mark('#holeOpts', state.holes); mark('#designOpts', state.design);
+  mark('#matOpts', state.material); mark('#coreOpts', state.core); mark('#finishOpts', state.finish); mark('#fontOpts', state.font);
+  document.querySelectorAll('.sw-wrap[data-k]').forEach(w => w.querySelectorAll('.sw').forEach(s => s.classList.toggle('on', s.dataset.c.toLowerCase() === (state[w.dataset.k]||'').toLowerCase())));
+  document.querySelectorAll('input[type=color][data-k]').forEach(i => i.value = state[i.dataset.k]);
+  document.querySelectorAll('[data-hex]').forEach(el => el.textContent = state[el.dataset.hex].toUpperCase());
+  $('textColor').value = state.textColor;
+  $('lblShape').textContent = shapeLabel(); $('lblDesign').textContent = DESIGNS[state.design].name;
+  $('lblMat').textContent = MATERIALS[state.material].name; $('lblCore').textContent = CORES[state.core].name; $('lblFinish').textContent = FINISHES[state.finish].name;
+  $('vWidth').textContent = Math.round(state.shapeParams.width*100) + '%';
+  $('vRound').textContent = state.shapeParams.roundness.toFixed(2);
+  $('vTop').textContent = state.shapeParams.topBias < .2 ? 'Controle' : state.shapeParams.topBias < .5 ? 'Allround' : 'Power';
+  if($('textInput').value !== state.text) $('textInput').value = state.text;
+  $('tVert').checked = state.textVertical;
+  ['Protector','Overgrip','Cover'].forEach(n => $('ex'+n).checked = state[n.toLowerCase()]);
+  syncers.forEach(f => f());
+
+  const s = state.stickers[selected];
+  $('selTools').classList.toggle('on', !!s);
+  if(s){
+    $('selName').textContent = s.type === 'image' ? 'Jouw logo' : 'Vorm: ' + s.type;
+    $('selColorRow').style.display = s.type === 'image' ? 'none' : 'flex';
+    if(s.color) $('selColor').value = s.color;
+    $('selSw').querySelectorAll('.sw').forEach(x => x.classList.toggle('on', x.dataset.c === s.color));
+  }
+  $('price').textContent = '€' + price();
+  $('specLine').textContent = `${shapeLabel()} · ${MATERIALS[state.material].name} · ± ${weight()} g`;
+  $('titleName').textContent = state.text.trim() ? state.text.trim().toUpperCase() : 'Jouw racket';
+  if(full){ drawDesignThumbs(); saveHash(); }
+}
+
+// ---------- tabs, views, actions ----------
+$('tabs').onclick = e => {
+  const b = e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === b.dataset.tab));
+};
+document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-view]').forEach(x => x.classList.toggle('on', x === b));
+  viewer.controls.autoRotate = false; $('spinBtn').classList.remove('on'); viewer.view(b.dataset.view);
+});
+$('spinBtn').onclick = () => { viewer.controls.autoRotate = !viewer.controls.autoRotate; $('spinBtn').classList.toggle('on', viewer.controls.autoRotate); };
+
+function toast(m){ const t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2400); }
+
+$('randomBtn').onclick = () => {
+  const pick = a => a[Math.floor(Math.random()*a.length)];
+  const shape = pick(Object.keys(SHAPES));
+  Object.assign(state, { shape, shapeParams:{...SHAPES[shape]}, design: pick(Object.keys(DESIGNS)), face: pick(PALETTE), frame: pick(PALETTE), grip: pick(PALETTE), finish: pick(Object.keys(FINISHES)) });
+  do { state.accent = pick(PALETTE); } while(state.accent === state.face);
+  do { state.accent2 = pick(PALETTE); } while(state.accent2 === state.accent);
+  update();
+};
+$('shareBtn').onclick = async () => {
+  saveHash();
+  try { await navigator.clipboard.writeText(location.href); toast('Link naar je ontwerp gekopieerd!'); }
+  catch(e){ prompt('Kopieer deze link:', location.href); }
+};
+$('downloadBtn').onclick = () => {
+  const a = document.createElement('a'); a.href = viewer.snapshot(); a.download = 'padelforge-racket.png'; a.click();
+};
+
+function summaryRows(){
+  const dot = c => `<i class="dot" style="background:${c}"></i>${c.toUpperCase()}`;
+  const rows = [
+    ['Vorm', shapeLabel()], ['Gaatjes', state.holes === 'big' ? 'Groot' : 'Klein'], ['Materiaal', MATERIALS[state.material].name], ['Kern', CORES[state.core].name],
+    ['Afwerking', FINISHES[state.finish].name], ['Patroon', DESIGNS[state.design].name],
+    ['Blad', dot(state.face)], ['Accenten', dot(state.accent) + ' ' + dot(state.accent2)], ['Frame', dot(state.frame)], ['Grip', dot(state.grip)]
+  ];
+  if(state.stickers.length) rows.push(['Vormen / logo', state.stickers.length + ' stuks']);
+  if(state.text.trim()) rows.push(['Tekst', state.text.trim().toUpperCase()]);
+  if(state.protector) rows.push(['Frame-protector','ja']); if(state.overgrip) rows.push(['Extra overgrips','3 stuks']); if(state.cover) rows.push(['Thermo-hoes','ja']);
+  rows.push(['Gewicht', '± ' + weight() + ' g'], ['Totaal', '<b style="color:var(--text)">€' + price() + '</b>']);
+  return rows;
+}
+$('orderBtn').onclick = () => {
+  viewer.view('angle');
+  setTimeout(() => {
+    $('orderImg').src = viewer.snapshot();
+    $('summary').innerHTML = summaryRows().map(([k,v]) => `<li><span>${k}</span><span>${v}</span></li>`).join('');
+    $('modal').classList.add('open');
+  }, 700);
+};
+$('closeModal').onclick = () => $('modal').classList.remove('open');
+$('modal').onclick = e => { if(e.target.id === 'modal') $('modal').classList.remove('open'); };
+$('copyOrder').onclick = async () => {
+  saveHash();
+  const text = 'Bestelaanvraag PadelForge\n' + summaryRows().map(([k,v]) => k + ': ' + v.replace(/<[^>]+>/g,'')).join('\n') + '\nOntwerp: ' + location.href;
+  try { await navigator.clipboard.writeText(text); toast('Bestelaanvraag gekopieerd!'); } catch(e){ prompt('Kopieer je bestelaanvraag:', text); }
+};
+
+update();
+</script>
+</body>
+</html>
