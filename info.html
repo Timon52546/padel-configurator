@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Levering, garantie & ontwerphulp · PadelForge</title>
+<meta name="description" content="Levertijd, verzending, garantie en gratis ontwerphulp bij PadelForge.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="pages.css">
+</head>
+<body>
+<nav class="nav scrolled">
+  <a href="/" class="logo"><i></i>Padel<b>Forge</b></a>
+  <div class="nav-links"><a href="quiz.html">Welke racket?</a><a href="clubs.html">Clubs</a><a href="info.html">Levering &amp; garantie</a></div>
+  <a href="configurator.html" class="btn primary">Ontwerp jouw racket →</a>
+</nav>
+<main class="page">
+
+<span class="eyebrow">Info</span>
+<h1>Levering, garantie &amp; hulp</h1>
+<p>Alles wat je wilt weten voor je bestelt, op één plek.</p>
+
+<h2>Op bestelling gemaakt</h2>
+<p>Bij PadelForge wordt er alleen gemaakt wat besteld is. Jouw racket bestaat pas als jij hem ontwerpt: geen overschotten, geen magazijn vol onverkochte rackets, en dus ook minder verspilling.</p>
+
+<div class="cards">
+  <div class="card"><b>2–4 weken</b><p>Gemiddelde levertijd vanaf je bestelling, omdat elk exemplaar op maat wordt gemaakt.</p></div>
+  <div class="card"><b>Gratis</b><p>Verzending naar België. Ook levering naar Nederland, Duitsland, Frankrijk en Luxemburg.</p></div>
+  <div class="card"><b>2 jaar</b><p>Wettelijke garantie op fabricagefouten, zoals voorzien in de Belgische consumentenwetgeving.</p></div>
+</div>
+
+<h2>Veelgestelde vragen</h2>
+<ul>
+ <li><b>Kan ik retourneren?</b> Een racket met jouw ontwerp is een op maat gemaakt product. Daarvoor geldt het wettelijke herroepingsrecht van 14 dagen niet. Klopt er iets niet met je bestelling of is er een fabricagefout, dan lossen we dat op.</li>
+ <li><b>Hoe volg ik mijn bestelling?</b> Na je betaling krijg je een bevestiging van Stripe. Via boonen.timon@outlook.com krijg je updates over de productie en verzending.</li>
+ <li><b>Kan ik mijn ontwerp nog wijzigen na betalen?</b> Mail ons zo snel mogelijk. Zolang de productie niet gestart is, kan het meestal nog.</li>
+ <li><b>Hoe betaal ik?</b> Veilig via Stripe, met onder meer Bancontact en kaart.</li>
+</ul>
+
+<h2 id="ontwerphulp">Gratis ontwerphulp</h2>
+<p>Geen zin om zelf te knutselen? Beschrijf je idee en wij maken het ontwerp voor je. Je krijgt een link waarin je het racket in 3D kunt bekijken, zonder verplichting.</p>
+<form class="f">
+ <input type="hidden" name="_subject" value="Ontwerphulp PadelForge">
+ <div class="row2"><label>Naam<input name="Naam" required></label><label>E-mail<input name="E-mail" type="email" required></label></div>
+ <label>Je idee (kleuren, stijl, tekst, logo...)<textarea name="Idee" required></textarea></label>
+ <button class="btn primary big" type="submit">Vraag ontwerphulp aan →</button>
+ <p class="note">Je mailprogramma opent met je bericht klaar. Je kunt ook gewoon de AI-assistent linksonder om een voorstel vragen.</p>
+</form>
+</main>
+<footer><div class="logo"><i></i>Padel<b>Forge</b></div><div><a href="info.html">Info</a> · <a href="clubs.html">Clubs</a> · <a href="quiz.html">Quiz</a> · © 2026 PadelForge</div></footer>
+<script src="site.js"></script>
+
+<script>
+const MAIL='boonen.timon@outlook.com';
+document.querySelectorAll('form.f').forEach(f=>f.addEventListener('submit',e=>{
+  e.preventDefault(); const d=new FormData(f); let body='';
+  for(const [k,v] of d.entries()) if(k!=='_subject') body+=k+': '+v+'\n';
+  location.href='mailto:'+MAIL+'?subject='+encodeURIComponent(d.get('_subject'))+'&body='+encodeURIComponent(body);
+}));
+</script>
+</body></html>
