@@ -248,7 +248,7 @@ export function drawDesign(ctx, w, h, cfg, images) {
 }
 
 // ---------- 3D model ----------
-function gripTexture(color, text, textColor) {
+function gripTexture(color) {
   // 512x612 keeps the same pixel density around and along the handle, so text is not stretched
   const c = document.createElement('canvas'); c.width = 512; c.height = 612;
   const g = c.getContext('2d');
@@ -257,24 +257,37 @@ function gripTexture(color, text, textColor) {
   for (let y = -300; y < 700; y += 30) { g.beginPath(); g.moveTo(0, y); g.lineTo(512, y + 120); g.stroke(); }
   g.strokeStyle = 'rgba(255,255,255,0.08)'; g.lineWidth = 2;
   for (let y = -300; y < 700; y += 30) { g.beginPath(); g.moveTo(0, y + 6); g.lineTo(512, y + 126); g.stroke(); }
-  if (text && text.trim()) {
-    g.save();
-    g.translate(256, 306);
-    g.rotate(-Math.PI / 2);
-    const label = text.trim().toUpperCase();
-    let size = 70;
-    g.font = `700 ${size}px "Space Grotesk", sans-serif`;
-    while (g.measureText(label).width > 540 && size > 30) { size -= 4; g.font = `700 ${size}px "Space Grotesk", sans-serif`; }
-    if (g.letterSpacing !== undefined) g.letterSpacing = '4px';
-    g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillStyle = textColor || '#ffffff';
-    g.fillText(label, 0, 0);
-    g.restore();
-  }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
   t.wrapS = THREE.RepeatWrapping;
   t.offset.x = 0.5; // canvas centre faces the front of the handle
   t.anisotropy = 8;
+  return t;
+}
+
+// Round end cap at the bottom of the handle, with an optional name
+function capTexture(color, text, textColor) {
+  const c = document.createElement('canvas'); c.width = c.height = 512;
+  const g = c.getContext('2d');
+  g.fillStyle = color; g.fillRect(0, 0, 512, 512);
+  const rg = g.createRadialGradient(256, 200, 20, 256, 256, 260);
+  rg.addColorStop(0, 'rgba(255,255,255,0.10)'); rg.addColorStop(1, 'rgba(0,0,0,0.25)');
+  g.fillStyle = rg; g.fillRect(0, 0, 512, 512);
+  g.strokeStyle = 'rgba(255,255,255,0.18)'; g.lineWidth = 6;
+  g.beginPath(); g.arc(256, 256, 226, 0, Math.PI * 2); g.stroke();
+  if (text && text.trim()) {
+    const label = text.trim().toUpperCase();
+    g.save();
+    g.translate(256, 256);
+    g.scale(0.73, 1); // the cap is oval: pre-compensate so letters keep their shape
+    let size = 150;
+    g.font = `700 ${size}px "Space Grotesk", sans-serif`;
+    while (g.measureText(label).width > 520 && size > 40) { size -= 6; g.font = `700 ${size}px "Space Grotesk", sans-serif`; }
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = textColor || '#ffffff';
+    g.fillText(label, 0, 6);
+    g.restore();
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
   return t;
 }
 
@@ -346,16 +359,20 @@ export function createRacket() {
     frame: new THREE.Mesh(undefined, mats.frame),
     throat: new THREE.Mesh(undefined, mats.frame),
     handle: new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.145, 1.3, 40), mats.grip),
-    cap: new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.17, 0.13, 40), mats.cap),
+    cap: new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.2, 0.14, 48), mats.cap),
+    capFace: new THREE.Mesh(new THREE.CircleGeometry(0.2, 48), new THREE.MeshPhysicalMaterial({ roughness: 0.3, metalness: 0.5, clearcoat: 1, polygonOffset: true, polygonOffsetFactor: -2 })),
     protector: new THREE.Mesh(undefined, new THREE.MeshPhysicalMaterial({ color: 0x0c0c0e, roughness: 0.5, clearcoat: 0.6 }))
   };
   meshes.handle.scale.set(1.12, 1, 0.82);
   meshes.cap.scale.set(1.12, 1, 0.82);
+  meshes.capFace.rotation.x = Math.PI / 2; // face downwards
+  meshes.capFace.scale.set(1.12, 0.82, 1);
   Object.values(meshes).forEach(m => group.add(m));
 
   let geoKey = '';
   let faceTexture = null;
   let gripColor = '';
+  let capKeyNow = '';
 
   function update(cfg, canvas) {
     const sp = cfg.shapeParams;
@@ -369,6 +386,7 @@ export function createRacket() {
       meshes.throat.geometry = g.throatGeo;
       meshes.handle.position.y = g.by - 0.98 - 0.65;
       meshes.cap.position.y = g.by - 0.98 - 1.3 - 0.05;
+      meshes.capFace.position.y = meshes.cap.position.y - 0.072;
       // Protector: curved strip on the top of the frame
       const pts = headOutline(sp).filter(v => v.y > g.bb.maxY * 0.55);
       pts.sort((a, b) => Math.atan2(b.y, b.x) - Math.atan2(a.y, a.x));
@@ -400,11 +418,18 @@ export function createRacket() {
     mats.frame.roughness = finish === 'matte' ? 0.7 : finish === 'metal' ? 0.22 : 0.3;
     mats.frame.clearcoat = finish === 'matte' ? 0 : 1;
     mats.cap.color.set(cfg.frame);
-    const gripKey = [cfg.grip, cfg.gripText || '', cfg.gripTextColor || ''].join('|');
-    if (gripColor !== gripKey) {
-      gripColor = gripKey;
+    const capKey = [cfg.frame, cfg.gripText || '', cfg.gripTextColor || ''].join('|');
+    if (capKeyNow !== capKey) {
+      capKeyNow = capKey;
+      const m = meshes.capFace.material;
+      if (m.map) m.map.dispose();
+      m.map = capTexture(cfg.frame, cfg.gripText, cfg.gripTextColor);
+      m.needsUpdate = true;
+    }
+    if (gripColor !== cfg.grip) {
+      gripColor = cfg.grip;
       if (mats.grip.map) mats.grip.map.dispose();
-      mats.grip.map = gripTexture(cfg.grip, cfg.gripText, cfg.gripTextColor);
+      mats.grip.map = gripTexture(cfg.grip);
       mats.grip.needsUpdate = true;
     }
   }
@@ -433,7 +458,8 @@ export class RacketViewer {
     scene.environmentIntensity = 0.55;
 
     this.camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
-    this.camera.position.set(0, 0, opts.distance || 12.5);
+    this.home = opts.distance || 12.5;
+    this.camera.position.set(0, 0, this.home);
 
     const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(5, 7, 9); scene.add(key);
     const rim = new THREE.DirectionalLight(opts.rimColor || 0xc6ff3d, 2.2); rim.position.set(-7, 3, -6); scene.add(rim);
@@ -460,7 +486,7 @@ export class RacketViewer {
       c.enableDamping = true; c.dampingFactor = 0.07;
       c.enablePan = false;
       c.enableZoom = opts.zoom !== false;
-      c.minDistance = 6; c.maxDistance = 18;
+      c.minDistance = 2.5; c.maxDistance = 18;
       c.autoRotate = !!opts.autoRotate; c.autoRotateSpeed = opts.autoRotateSpeed || 1.4;
       c.target.set(0, 0, 0);
       c.addEventListener('start', () => { if (opts.stopRotateOnTouch) c.autoRotate = false; });
@@ -507,15 +533,23 @@ export class RacketViewer {
   }
 
   view(name) {
-    const d = this.camera.position.length();
-    const dirs = { front: [0, 0, 1], side: [1, 0, 0.02], back: [0, 0, -1], angle: [0.7, 0.25, 0.8] };
-    const v = new THREE.Vector3(...(dirs[name] || dirs.front)).normalize().multiplyScalar(d);
-    const start = this.camera.position.clone();
+    const capY = this.racket.meshes.cap.getWorldPosition(new THREE.Vector3()).y;
+    const views = {
+      front: { dir: [0, 0, 1] }, side: { dir: [1, 0, 0.02] }, back: { dir: [0, 0, -1] }, angle: { dir: [0.7, 0.25, 0.8] },
+      bottom: { dir: [0.12, -0.78, 0.62], target: [0, capY, 0], dist: 3.4 }
+    };
+    const p = views[name] || views.front;
+    const target = new THREE.Vector3(...(p.target || [0, 0, 0]));
+    const end = new THREE.Vector3(...p.dir).normalize().multiplyScalar(p.dist || this.home).add(target);
+    const startPos = this.camera.position.clone();
+    const startT = this.controls ? this.controls.target.clone() : new THREE.Vector3();
     const t0 = performance.now();
     const step = () => {
-      const k = Math.min(1, (performance.now() - t0) / 650);
+      const k = Math.min(1, (performance.now() - t0) / 800);
       const e = 1 - Math.pow(1 - k, 3);
-      this.camera.position.lerpVectors(start, v, e).setLength(d);
+      this.camera.position.lerpVectors(startPos, end, e);
+      if (this.controls) this.controls.target.lerpVectors(startT, target, e);
+      else this.camera.lookAt(target);
       if (k < 1) requestAnimationFrame(step);
     };
     step();
@@ -540,7 +574,7 @@ export const PRESETS = {
     label: 'Neon Strike', shape: 'diamond', shapeParams: { ...SHAPES.diamond }, design: 'bolt', holes: 'small',
     face: '#0d0f14', accent: '#c6ff3d', accent2: '#ffffff', frame: '#0d0f14', grip: '#c6ff3d',
     text: 'FORGE', textColor: '#ffffff', font: 'grotesk', textSize: 0.09, textY: 0.78, textVertical: false,
-    material: 'c12k', core: 'hard', finish: 'gloss', stickers: [], gripText: 'NEON', gripTextColor: '#0d0f14'
+    material: 'c12k', core: 'hard', finish: 'gloss', stickers: []
   },
   ocean: {
     label: 'Deep Ocean', shape: 'teardrop', shapeParams: { ...SHAPES.teardrop }, design: 'waves', holes: 'small',
@@ -561,9 +595,9 @@ export const PRESETS = {
     material: 'c18k', core: 'hard', finish: 'metal', stickers: [{ type: 'stripe', x: 0.5, y: 0.72, size: 0.16, rot: -20, color: '#ff4d2e' }]
   },
   voorbeeld: {
-    label: 'TIMON', shape: 'teardrop', shapeParams: { ...SHAPES.teardrop }, design: 'stripes', holes: 'small',
+    label: 'Voorbeeld', shape: 'teardrop', shapeParams: { ...SHAPES.teardrop }, design: 'stripes', holes: 'small',
     face: '#0b2f8a', accent: '#c6ff3d', accent2: '#c6ff3d', frame: '#0d0f14', grip: '#0d0f14',
     text: '', textColor: '#ffffff', font: 'grotesk', textSize: 0.1, textY: 0.5, textVertical: false,
-    material: 'c12k', core: 'medium', finish: 'gloss', stickers: [], gripText: 'TIMON', gripTextColor: '#ffffff'
+    material: 'c12k', core: 'medium', finish: 'gloss', stickers: [], gripText: '', gripTextColor: '#ffffff'
   }
 };
