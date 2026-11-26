@@ -3,451 +3,245 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PadelForge · Ontwerp je eigen padelracket</title>
-<meta name="description" content="Ontwerp je eigen padelracket: kies vorm, kleuren, materiaal en je eigen tekst.">
+<title>PadelForge · Custom padelrackets in 3D</title>
+<meta name="description" content="Ontwerp je eigen padelracket in 3D: vorm, kleuren, patronen, je logo en je naam.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
 <style>
-  :root{
-    --bg:#0f1115; --panel:#171a21; --line:#262b36; --text:#eef1f6; --muted:#8b93a5;
-    --accent:#c6ff3d; --radius:14px;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-  header{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid var(--line)}
-  .logo{font-weight:900;font-size:20px;letter-spacing:-.5px}
-  .logo span{color:var(--accent)}
-  header nav{display:flex;gap:10px}
-  .btn{border:1px solid var(--line);background:transparent;color:var(--text);padding:9px 14px;border-radius:10px;font-size:14px;cursor:pointer;font-weight:600}
-  .btn:hover{border-color:var(--muted)}
-  .btn.primary{background:var(--accent);color:#111;border-color:var(--accent)}
-  .btn.primary:hover{filter:brightness(1.08)}
-  main{display:grid;grid-template-columns:1.1fr 1fr;gap:0;min-height:calc(100vh - 66px)}
-  .stage{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
-         background:radial-gradient(circle at 50% 40%,#e9edf3 0%,#b9c0cc 75%);padding:24px}
-  .stage svg{height:min(78vh,640px);width:auto;filter:drop-shadow(0 30px 40px rgba(0,0,0,.55));transition:transform .4s}
-  .stage svg:hover{transform:rotate(-4deg) scale(1.02)}
-  .stage .hint{color:#4a5263;font-size:13px;margin-top:10px}
-  .panel{padding:28px;border-left:1px solid var(--line);background:var(--panel);overflow-y:auto}
-  h1{font-size:28px;letter-spacing:-.6px;margin-bottom:6px}
-  .sub{color:var(--muted);margin-bottom:22px;font-size:15px}
-  .group{border-top:1px solid var(--line);padding:18px 0}
-  .group h3{font-size:13px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between}
-  .group h3 em{font-style:normal;color:var(--text);text-transform:none;letter-spacing:0}
-  .options{display:flex;flex-wrap:wrap;gap:8px}
-  .opt{border:1px solid var(--line);background:#1d212a;color:var(--text);padding:10px 13px;border-radius:10px;cursor:pointer;font-size:14px;display:flex;flex-direction:column;gap:2px;text-align:left;min-width:96px}
-  .opt small{color:var(--muted);font-size:12px}
-  .opt:hover{border-color:var(--muted)}
-  .opt.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
-  .swatches{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
-  .sw{width:32px;height:32px;border-radius:50%;border:2px solid transparent;cursor:pointer;outline:1px solid var(--line);outline-offset:2px}
-  .sw.active{outline:2px solid var(--accent)}
-  .sw-custom{position:relative;width:32px;height:32px;border-radius:50%;overflow:hidden;outline:1px dashed var(--muted);outline-offset:2px;cursor:pointer;
-             background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red)}
-  .sw-custom input{opacity:0;position:absolute;inset:0;width:100%;height:100%;cursor:pointer}
-  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  input[type=text]{flex:1;min-width:160px;background:#1d212a;border:1px solid var(--line);color:var(--text);padding:11px 12px;border-radius:10px;font-size:15px}
-  input[type=text]:focus{outline:none;border-color:var(--accent)}
-  .check{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:#1d212a}
-  .check input{accent-color:var(--accent);width:18px;height:18px}
-  .check span small{display:block;color:var(--muted);font-size:12px}
-  .summary{position:sticky;bottom:0;background:linear-gradient(transparent,var(--panel) 20%);padding-top:22px;margin-top:6px}
-  .price-box{display:flex;align-items:center;justify-content:space-between;background:#0f1115;border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
-  .price{font-size:30px;font-weight:900;letter-spacing:-1px}
-  .price-box small{color:var(--muted);display:block;font-size:12px}
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
-  .modal.open{display:flex}
-  .modal .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;max-width:460px;width:100%;padding:26px}
-  .modal h2{margin-bottom:12px}
-  .modal ul{list-style:none;margin:12px 0 18px}
-  .modal li{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
-  .modal li span:last-child{color:var(--muted)}
-  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--accent);color:#111;padding:10px 16px;border-radius:10px;font-weight:700;transition:transform .3s;z-index:20}
-  .toast.show{transform:translateX(-50%) translateY(0)}
-  @media (max-width:860px){
-    main{grid-template-columns:1fr}
-    .stage{position:relative;height:auto;padding:30px 10px}
-    .stage svg{height:52vh}
-    .panel{border-left:none;border-top:1px solid var(--line)}
-    header nav .btn.hide-sm{display:none}
+  .hero{position:relative;min-height:100vh;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:20px;
+    padding:110px clamp(18px,4vw,48px) 60px;overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:0;background:
+    radial-gradient(600px 420px at 72% 45%,rgba(198,255,61,.16),transparent 70%),
+    radial-gradient(700px 500px at 10% 90%,rgba(46,123,255,.12),transparent 70%);pointer-events:none}
+  .hero::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.35;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:64px 64px;mask-image:radial-gradient(ellipse at 60% 40%,#000 20%,transparent 70%)}
+  .hero-copy{position:relative;z-index:2;max-width:620px}
+  .hero h1{font-family:var(--display);font-weight:700;font-size:clamp(46px,7vw,98px);line-height:.95;letter-spacing:-3px;margin:22px 0}
+  .hero h1 span{color:var(--accent);font-style:italic}
+  .hero p.lead{font-size:clamp(16px,1.4vw,19px);color:var(--muted);line-height:1.6;max-width:480px}
+  .hero .ctas{display:flex;gap:12px;margin-top:34px;flex-wrap:wrap}
+  .stats{display:flex;gap:36px;margin-top:52px}
+  .stats div{font-family:var(--display);font-size:30px;font-weight:700}
+  .stats small{display:block;font-family:var(--font);font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.5px;margin-top:2px}
+  .hero-3d{position:relative;z-index:1;height:min(86vh,820px);cursor:grab}
+  .hero-3d:active{cursor:grabbing}
+  .drag-hint{position:absolute;bottom:4%;left:50%;transform:translateX(-50%);font-size:12px;color:var(--muted);
+    border:1px solid var(--line2);padding:7px 13px;border-radius:999px;background:rgba(7,8,11,.6);backdrop-filter:blur(6px);white-space:nowrap}
+
+  .ticker{border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;padding:18px 0;background:var(--bg2)}
+  .ticker-track{display:flex;gap:48px;width:max-content;animation:tick 32s linear infinite;font-family:var(--display);font-size:22px;font-weight:700;letter-spacing:-.5px}
+  .ticker-track span{display:flex;align-items:center;gap:48px;color:#cfd4dd}
+  .ticker-track span::after{content:"✦";color:var(--accent);font-size:16px}
+  @keyframes tick{to{transform:translateX(-50%)}}
+
+  section.block{padding:120px clamp(18px,4vw,48px)}
+  .head{display:flex;justify-content:space-between;align-items:end;gap:30px;margin-bottom:56px;flex-wrap:wrap}
+  .head h2{font-family:var(--display);font-size:clamp(34px,4.5vw,60px);letter-spacing:-2px;line-height:1;margin-top:14px;max-width:700px}
+  .head p{color:var(--muted);max-width:380px;line-height:1.6}
+
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .step{border:1px solid var(--line);border-radius:var(--radius);padding:32px;background:linear-gradient(180deg,var(--panel),var(--bg));position:relative;overflow:hidden}
+  .step .num{font-family:var(--display);font-size:80px;font-weight:700;color:transparent;-webkit-text-stroke:1px var(--line2);position:absolute;right:20px;top:6px}
+  .step h3{font-family:var(--display);font-size:24px;margin:60px 0 10px;letter-spacing:-.5px}
+  .step p{color:var(--muted);line-height:1.6}
+  .step .ico{width:46px;height:46px;border-radius:14px;background:rgba(198,255,61,.1);border:1px solid rgba(198,255,61,.3);display:grid;place-items:center;font-size:20px}
+
+  .collection{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .card{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);overflow:hidden;display:flex;flex-direction:column;transition:border-color .3s,transform .3s}
+  .card:hover{border-color:var(--line2);transform:translateY(-4px)}
+  .card .view{height:340px;position:relative;background:radial-gradient(circle at 50% 45%,#1d212b,var(--panel) 70%)}
+  .card .info{padding:18px 20px 20px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line)}
+  .card h4{font-family:var(--display);font-size:19px}
+  .card small{color:var(--muted);font-size:13px}
+  .card .go{width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;transition:transform .2s}
+  .card:hover .go{transform:rotate(-45deg)}
+
+  .features{display:grid;grid-template-columns:1.3fr 1fr 1fr;grid-template-rows:auto auto;gap:16px}
+  .feat{border:1px solid var(--line);border-radius:var(--radius);padding:30px;background:var(--panel);min-height:220px;display:flex;flex-direction:column;justify-content:flex-end}
+  .feat.big{grid-row:span 2;background:linear-gradient(160deg,rgba(198,255,61,.14),var(--panel) 55%);justify-content:space-between}
+  .feat h3{font-family:var(--display);font-size:22px;margin-bottom:8px;letter-spacing:-.4px}
+  .feat p{color:var(--muted);line-height:1.6;font-size:15px}
+  .feat .big-num{font-family:var(--display);font-size:clamp(60px,8vw,120px);font-weight:700;letter-spacing:-4px;line-height:1;color:var(--accent)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .chips span{font-size:12px;padding:6px 11px;border-radius:999px;border:1px solid var(--line2);color:#cfd4dd}
+
+  .cta-band{margin:0 clamp(18px,4vw,48px);border-radius:28px;padding:clamp(40px,7vw,90px);position:relative;overflow:hidden;
+    background:var(--accent);color:var(--accent-ink);display:flex;justify-content:space-between;align-items:center;gap:30px;flex-wrap:wrap}
+  .cta-band h2{font-family:var(--display);font-size:clamp(36px,5vw,72px);letter-spacing:-2.5px;line-height:.95;max-width:720px}
+  .cta-band .btn{background:var(--accent-ink);color:var(--accent);border-color:var(--accent-ink)}
+  .cta-band::after{content:"";position:absolute;right:-80px;top:-80px;width:320px;height:320px;border-radius:50%;border:50px solid rgba(0,0,0,.07)}
+
+  .faq{max-width:860px}
+  details{border-bottom:1px solid var(--line);padding:22px 0}
+  summary{cursor:pointer;font-family:var(--display);font-size:20px;list-style:none;display:flex;justify-content:space-between;gap:20px}
+  summary::after{content:"+";color:var(--accent);font-size:26px;line-height:1;transition:transform .2s}
+  details[open] summary::after{transform:rotate(45deg)}
+  details p{color:var(--muted);line-height:1.7;margin-top:12px;max-width:720px}
+
+  footer{padding:60px clamp(18px,4vw,48px) 40px;border-top:1px solid var(--line);margin-top:120px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;color:var(--muted);font-size:14px}
+
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity .8s ease,transform .8s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  @media (max-width:1000px){
+    .hero{grid-template-columns:1fr;padding-top:100px}
+    .hero-3d{height:60vh;order:-1}
+    .collection{grid-template-columns:repeat(2,1fr)}
+    .features{grid-template-columns:1fr}
+    .feat.big{grid-row:auto}
+    .steps{grid-template-columns:1fr}
   }
 </style>
 </head>
 <body>
-<header>
-  <div class="logo">Padel<span>Forge</span></div>
-  <nav>
-    <button class="btn hide-sm" id="randomBtn">🎲 Verras me</button>
-    <button class="btn" id="shareBtn">🔗 Deel ontwerp</button>
-  </nav>
-</header>
 
-<main>
-  <section class="stage">
-    <svg id="racket" viewBox="0 0 300 530" xmlns="http://www.w3.org/2000/svg" aria-label="Voorbeeld van je padelracket">
-      <defs>
-        <clipPath id="faceClip"><path id="clipPath1" d=""/></clipPath>
-        <clipPath id="holeClip"><path id="clipPath2" d="" transform="translate(150 175) scale(0.8) translate(-150 -175)"/></clipPath>
-        <pattern id="carbon" width="8" height="8" patternUnits="userSpaceOnUse">
-          <rect width="8" height="8" fill="#000" fill-opacity="0"/>
-          <rect width="4" height="4" fill="#fff" fill-opacity=".05"/>
-          <rect x="4" y="4" width="4" height="4" fill="#fff" fill-opacity=".05"/>
-        </pattern>
-        <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#fff" stop-opacity=".28"/>
-          <stop offset=".45" stop-color="#fff" stop-opacity="0"/>
-          <stop offset="1" stop-color="#000" stop-opacity=".25"/>
-        </linearGradient>
-        <linearGradient id="fadeGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" id="fadeA"/>
-          <stop offset="1" id="fadeB"/>
-        </linearGradient>
-      </defs>
+<nav class="nav" id="nav">
+  <a href="/" class="logo"><i></i>Padel<b>Forge</b></a>
+  <div class="nav-links">
+    <a href="#hoe">Hoe het werkt</a>
+    <a href="#collectie">Collectie</a>
+    <a href="#features">Waarom</a>
+    <a href="#faq">FAQ</a>
+  </div>
+  <a href="configurator.html" class="btn primary">Ontwerp jouw racket →</a>
+</nav>
 
-      <!-- Hals (throat) -->
-      <path id="throat" d="M104 318 L138 402 L162 402 L196 318" fill="none" stroke-width="15" stroke-linejoin="round"/>
-      <!-- Handvat -->
-      <rect id="grip" x="133" y="398" width="34" height="112" rx="9"/>
-      <g id="gripLines" stroke="#000" stroke-opacity=".22" stroke-width="2"></g>
-      <rect id="cap" x="130" y="500" width="40" height="18" rx="7"/>
-
-      <!-- Blad -->
-      <g clip-path="url(#faceClip)">
-        <rect id="faceBase" x="0" y="0" width="300" height="400"/>
-        <g id="designLayer"></g>
-        <rect id="texture" x="0" y="0" width="300" height="400" fill="url(#carbon)"/>
-        <g id="holes" clip-path="url(#holeClip)"></g>
-        <text id="faceText" x="150" y="190" text-anchor="middle" dominant-baseline="middle"
-              font-family="system-ui,Segoe UI,sans-serif" font-weight="900" letter-spacing="2"></text>
-        <rect x="0" y="0" width="300" height="400" fill="url(#shine)"/>
-      </g>
-      <!-- Frame -->
-      <path id="frame" d="" fill="none" stroke-width="13"/>
-      <path id="protector" d="" fill="none" stroke-width="15" stroke-linecap="round"/>
-    </svg>
-    <p class="hint">Live voorbeeld · elke keuze past het racket meteen aan</p>
-  </section>
-
-  <section class="panel">
-    <h1>Ontwerp je eigen racket</h1>
-    <p class="sub">Kies vorm, materiaal, kleuren en je eigen tekst. Je ziet de prijs live.</p>
-
-    <div class="group">
-      <h3>Vorm <em id="lblShape"></em></h3>
-      <div class="options" id="optShape"></div>
+<header class="hero">
+  <div class="hero-copy">
+    <span class="eyebrow">Custom padelrackets</span>
+    <h1>Jouw racket.<br>Jouw <span>signature.</span></h1>
+    <p class="lead">Ontwerp je padelracket volledig zelf in 3D. Kies de vorm, mix je eigen kleuren, plaats vormen en je logo, en zet je naam op het blad. Wat je ziet is wat je krijgt.</p>
+    <div class="ctas">
+      <a href="configurator.html" class="btn primary big">Start met ontwerpen →</a>
+      <a href="#collectie" class="btn big">Bekijk de collectie</a>
     </div>
-
-    <div class="group">
-      <h3>Materiaal blad <em id="lblMaterial"></em></h3>
-      <div class="options" id="optMaterial"></div>
-    </div>
-
-    <div class="group">
-      <h3>Kern <em id="lblCore"></em></h3>
-      <div class="options" id="optCore"></div>
-    </div>
-
-    <div class="group">
-      <h3>Kleur frame</h3>
-      <div class="swatches" data-key="frame"></div>
-    </div>
-
-    <div class="group">
-      <h3>Kleur blad</h3>
-      <div class="swatches" data-key="face"></div>
-    </div>
-
-    <div class="group">
-      <h3>Design <em id="lblDesign"></em></h3>
-      <div class="options" id="optDesign"></div>
-      <div style="height:12px"></div>
-      <h3>Accentkleur</h3>
-      <div class="swatches" data-key="accent"></div>
-    </div>
-
-    <div class="group">
-      <h3>Eigen tekst <em>+ €12</em></h3>
-      <div class="row">
-        <input type="text" id="textInput" maxlength="12" placeholder="Bv. je naam of bijnaam">
-      </div>
-      <div style="height:12px"></div>
-      <h3>Tekstkleur</h3>
-      <div class="swatches" data-key="textColor"></div>
-    </div>
-
-    <div class="group">
-      <h3>Kleur grip</h3>
-      <div class="swatches" data-key="grip"></div>
-    </div>
-
-    <div class="group">
-      <h3>Extra's</h3>
-      <label class="check"><span>Frame-protector<small>Beschermt de rand tegen schuren</small></span><span>+ €9 <input type="checkbox" id="exProtector"></span></label>
-      <label class="check"><span>Extra overgrips (3 stuks)<small>In dezelfde kleur als je grip</small></span><span>+ €6 <input type="checkbox" id="exOvergrip"></span></label>
-      <label class="check"><span>Thermo-hoes<small>Beschermt tegen hitte en kou</small></span><span>+ €15 <input type="checkbox" id="exCover"></span></label>
-    </div>
-
-    <div class="summary">
-      <div class="price-box">
-        <div><small>Jouw racket</small><div class="price" id="price">€0</div><small id="weight"></small></div>
-        <button class="btn primary" id="orderBtn">Bestellen →</button>
-      </div>
-    </div>
-  </section>
-</main>
-
-<div class="modal" id="modal">
-  <div class="card">
-    <h2>Jouw ontwerp</h2>
-    <p class="sub" style="margin:0">Overzicht van je custom racket.</p>
-    <ul id="summaryList"></ul>
-    <div class="row" style="justify-content:space-between">
-      <button class="btn" id="closeModal">Verder aanpassen</button>
-      <button class="btn primary" id="confirmOrder">Bestelaanvraag kopiëren</button>
+    <div class="stats">
+      <div>360°<small>3D preview</small></div>
+      <div>∞<small>kleurcombinaties</small></div>
+      <div>3<small>basisvormen</small></div>
     </div>
   </div>
+  <div class="hero-3d" id="hero3d">
+    <div class="loader" id="heroLoader">3D laden…</div>
+    <span class="drag-hint">↻ Sleep om te draaien</span>
+  </div>
+</header>
+
+<div class="ticker">
+  <div class="ticker-track">
+    <span>CARBON 18K</span><span>360° PREVIEW</span><span>JOUW LOGO</span><span>EIGEN KLEUREN</span><span>HARD · MEDIUM · SOFT EVA</span><span>MAT · GLANS · METALLIC</span><span>JOUW NAAM</span>
+    <span>CARBON 18K</span><span>360° PREVIEW</span><span>JOUW LOGO</span><span>EIGEN KLEUREN</span><span>HARD · MEDIUM · SOFT EVA</span><span>MAT · GLANS · METALLIC</span><span>JOUW NAAM</span>
+  </div>
 </div>
+
+<section class="block" id="hoe">
+  <div class="head reveal">
+    <div><span class="eyebrow">Hoe het werkt</span><h2>Van idee naar racket in drie stappen.</h2></div>
+    <p>Geen ontwerpervaring nodig. Alles gebeurt live in je browser, je ziet elke aanpassing meteen in 3D.</p>
+  </div>
+  <div class="steps">
+    <div class="step reveal"><span class="num">01</span><div class="ico">◇</div><h3>Kies je vorm</h3><p>Rond voor controle, traan voor allround of diamant voor power. Of verschuif de sliders en maak je eigen vorm.</p></div>
+    <div class="step reveal"><span class="num">02</span><div class="ico">✦</div><h3>Maak je design</h3><p>Elke kleur die je wilt, 8 patronen, vormen die je zelf plaatst en sleept, je eigen logo en je naam.</p></div>
+    <div class="step reveal"><span class="num">03</span><div class="ico">➜</div><h3>Bestel &amp; speel</h3><p>Kies je materiaal, kern en afwerking. Je ziet de prijs live en kunt je ontwerp delen met één link.</p></div>
+  </div>
+</section>
+
+<section class="block" id="collectie" style="padding-top:0">
+  <div class="head reveal">
+    <div><span class="eyebrow">Collectie</span><h2>Start vanuit een signature design.</h2></div>
+    <p>Draai aan de rackets. Klik op een design om het verder aan te passen in de configurator.</p>
+  </div>
+  <div class="collection" id="collection"></div>
+</section>
+
+<section class="block" id="features" style="padding-top:0">
+  <div class="head reveal">
+    <div><span class="eyebrow">Waarom PadelForge</span><h2>Premium tot in het kleinste gaatje.</h2></div>
+  </div>
+  <div class="features">
+    <div class="feat big reveal">
+      <div class="big-num">100%</div>
+      <div><h3>Volledig jouw ontwerp</h3><p>Geen templates waar je in vastzit. Kies elke kleur via de kleurkiezer, plaats vormen waar je wilt en upload je eigen logo of afbeelding.</p>
+        <div class="chips"><span>Kleurkiezer</span><span>10 vormen</span><span>Logo-upload</span><span>4 lettertypes</span><span>Vormsliders</span></div></div>
+    </div>
+    <div class="feat reveal"><h3>Echte 3D-preview</h3><p>Draai, zoom en bekijk je racket van alle kanten, met realistische reflecties en materialen.</p></div>
+    <div class="feat reveal"><h3>Premium materialen</h3><p>Glasvezel, carbon 3K, 12K of 18K, met een kern in soft, medium of hard EVA.</p></div>
+    <div class="feat reveal"><h3>Drie afwerkingen</h3><p>Hoogglans, mat of metallic. Je ziet het verschil meteen in de lichtreflecties.</p></div>
+    <div class="feat reveal"><h3>Deel je ontwerp</h3><p>Elk ontwerp krijgt een eigen link. Stuur het naar je padelmaat of download een afbeelding.</p></div>
+  </div>
+</section>
+
+<div class="cta-band reveal">
+  <h2>Klaar om op te vallen op het terrein?</h2>
+  <a href="configurator.html" class="btn big">Ontwerp jouw racket →</a>
+</div>
+
+<section class="block" id="faq">
+  <div class="head reveal"><div><span class="eyebrow">FAQ</span><h2>Veelgestelde vragen</h2></div></div>
+  <div class="faq">
+    <details class="reveal"><summary>Welke vorm past bij mij?</summary><p>Rond geeft de meeste controle en een grote sweet spot, ideaal voor beginners. Traan is een allrounder tussen controle en kracht. Diamant legt het gewicht hoger in de kop voor maximale power: vooral voor gevorderde, aanvallende spelers.</p></details>
+    <details class="reveal"><summary>Wat is het verschil tussen carbon 3K, 12K en 18K?</summary><p>Het getal staat voor het aantal carbonvezels per bundel. Hoe hoger, hoe stijver en lichter het blad, en hoe meer kracht je meegeeft. Glasvezel is flexibeler en vergevingsgezinder.</p></details>
+    <details class="reveal"><summary>Kan ik mijn eigen logo gebruiken?</summary><p>Ja. In de configurator upload je een PNG of JPG (bij voorkeur met transparante achtergrond), en daarna kun je het verslepen, vergroten en draaien op het blad.</p></details>
+    <details class="reveal"><summary>Hoe deel ik mijn ontwerp?</summary><p>Klik op "Deel ontwerp" in de configurator. Je krijgt een link waarmee iedereen exact jouw racket in 3D kan bekijken. Je kunt ook een afbeelding downloaden.</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="logo"><i></i>Padel<b>Forge</b></div>
+  <div>© 2026 PadelForge · Ontworpen door jou</div>
+</footer>
+
 <div class="toast" id="toast"></div>
 
-<script>
-const SHAPES = {
-  round:    {name:"Rond",    note:"Controle", d:"M150 22 C238 22 270 92 270 178 C270 268 218 330 150 336 C82 330 30 268 30 178 C30 92 62 22 150 22 Z", weight:355},
-  teardrop: {name:"Traan",   note:"Allround", d:"M150 22 C232 22 264 80 264 160 C264 245 222 305 150 336 C78 305 36 245 36 160 C36 80 68 22 150 22 Z", weight:360},
-  diamond:  {name:"Diamant", note:"Power",    d:"M150 22 C212 22 254 58 267 115 C279 172 248 258 150 336 C52 258 21 172 33 115 C46 58 88 22 150 22 Z", weight:365}
-};
-const MATERIALS = {
-  glass: {name:"Glasvezel",   note:"Comfort · −€20", price:-20, weight:-5},
-  c3k:   {name:"Carbon 3K",   note:"Inbegrepen",     price:0,   weight:0},
-  c12k:  {name:"Carbon 12K",  note:"+€30",           price:30,  weight:-5},
-  c18k:  {name:"Carbon 18K",  note:"+€50",           price:50,  weight:-10}
-};
-const CORES = {
-  soft:   {name:"Soft EVA",   note:"Zacht · beginners", price:0},
-  medium: {name:"Medium EVA", note:"Balans",            price:0},
-  hard:   {name:"Hard EVA",   note:"Strak · +€10",      price:10}
-};
-const DESIGNS = {
-  solid:   {name:"Effen",       note:"Inbegrepen", price:0},
-  stripes: {name:"Strepen",     note:"+€10",       price:10},
-  fade:    {name:"Verloop",     note:"+€10",       price:10},
-  split:   {name:"Gesplitst",   note:"+€10",       price:10},
-  bolt:    {name:"Bliksem",     note:"+€15",       price:15}
-};
-const PALETTE = ["#111317","#ffffff","#c6ff3d","#ff4d2e","#2e7bff","#ffcc00","#ff3d9a","#8a5cff","#00c2a8","#9aa3b2"];
-const BASE_PRICE = 129;
+<script type="module">
+import { RacketViewer, PRESETS, makeDesignCanvas } from './racket.js';
 
-const defaults = {shape:"teardrop", material:"c3k", core:"medium", design:"stripes",
-  frame:"#111317", face:"#2e7bff", accent:"#c6ff3d", textColor:"#ffffff", grip:"#111317",
-  text:"", protector:false, overgrip:false, cover:false};
-let state = {...defaults};
+// Nav background on scroll
+const nav = document.getElementById('nav');
+addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 20));
 
-const $ = id => document.getElementById(id);
-const fmt = n => "€" + n.toFixed(0);
+// Reveal on scroll
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
-function buildOptions(containerId, data, key){
-  const el = $(containerId);
-  el.innerHTML = "";
-  Object.entries(data).forEach(([id, o]) => {
-    const b = document.createElement("button");
-    b.className = "opt"; b.dataset.id = id;
-    b.innerHTML = `<b>${o.name}</b><small>${o.note}</small>`;
-    b.onclick = () => { state[key] = id; render(); };
-    el.appendChild(b);
+await document.fonts.ready;
+
+// Hero racket
+const heroCfg = PRESETS.neon;
+const hero = new RacketViewer(document.getElementById('hero3d'), {
+  autoRotate: true, autoRotateSpeed: 1.2, zoom: false, float: true, tilt: -0.28, distance: 11.5, stopRotateOnTouch: false
+});
+hero.update(heroCfg, makeDesignCanvas(heroCfg));
+document.getElementById('heroLoader').remove();
+
+// Collection cards
+const wrap = document.getElementById('collection');
+Object.entries(PRESETS).forEach(([id, cfg], i) => {
+  const a = document.createElement('a');
+  a.className = 'card reveal';
+  a.href = 'configurator.html#preset=' + id;
+  a.innerHTML = `<div class="view"></div><div class="info"><div><h4>${cfg.label}</h4><small>${cfg.shape === 'diamond' ? 'Diamant' : cfg.shape === 'round' ? 'Rond' : 'Traan'} · ${cfg.material === 'glass' ? 'Glasvezel' : 'Carbon ' + cfg.material.slice(1).toUpperCase()}</small></div><span class="go">→</span></div>`;
+  wrap.appendChild(a);
+  io.observe(a);
+  const v = new RacketViewer(a.querySelector('.view'), {
+    autoRotate: true, autoRotateSpeed: 1.6 + i * 0.25, zoom: false, distance: 13, rimColor: cfg.accent
   });
-}
-
-function buildSwatches(){
-  document.querySelectorAll(".swatches").forEach(wrap => {
-    const key = wrap.dataset.key;
-    wrap.innerHTML = "";
-    PALETTE.forEach(c => {
-      const s = document.createElement("button");
-      s.className = "sw"; s.style.background = c; s.dataset.color = c; s.title = c;
-      s.onclick = () => { state[key] = c; render(); };
-      wrap.appendChild(s);
-    });
-    const custom = document.createElement("label");
-    custom.className = "sw-custom"; custom.title = "Eigen kleur";
-    const inp = document.createElement("input");
-    inp.type = "color";
-    inp.oninput = e => { state[key] = e.target.value; render(); };
-    custom.appendChild(inp);
-    wrap.appendChild(custom);
-  });
-}
-
-function drawDesign(){
-  const g = $("designLayer");
-  const a = state.accent;
-  let svg = "";
-  switch(state.design){
-    case "stripes":
-      for(let i=-300;i<400;i+=46){ svg += `<rect x="${i}" y="-50" width="14" height="520" fill="${a}" transform="rotate(28 150 180)"/>`; }
-      break;
-    case "fade":
-      $("fadeA").setAttribute("stop-color", state.face);
-      $("fadeB").setAttribute("stop-color", a);
-      svg = `<rect x="0" y="0" width="300" height="400" fill="url(#fadeGrad)"/>`;
-      break;
-    case "split":
-      svg = `<rect x="150" y="0" width="150" height="400" fill="${a}"/>`;
-      break;
-    case "bolt":
-      svg = `<path d="M175 30 L105 190 L148 190 L118 330 L205 150 L160 150 L190 30 Z" fill="${a}"/>`;
-      break;
-  }
-  g.innerHTML = svg;
-}
-
-function drawHoles(){
-  const g = $("holes");
-  let s = "";
-  for(let y=50; y<330; y+=21){
-    const offset = (Math.round((y-50)/21) % 2) ? 10.5 : 0;
-    for(let x=20+offset; x<290; x+=21){
-      s += `<circle cx="${x}" cy="${y}" r="4.2" fill="#000" fill-opacity=".45"/>`;
-    }
-  }
-  g.innerHTML = s;
-}
-
-function drawGripLines(){
-  let s = "";
-  for(let y=410;y<500;y+=10){ s += `<line x1="133" y1="${y}" x2="167" y2="${y+8}"/>`; }
-  $("gripLines").innerHTML = s;
-}
-
-function calcPrice(){
-  let p = BASE_PRICE + MATERIALS[state.material].price + CORES[state.core].price + DESIGNS[state.design].price;
-  if(state.text.trim()) p += 12;
-  if(state.protector) p += 9;
-  if(state.overgrip) p += 6;
-  if(state.cover) p += 15;
-  return p;
-}
-function calcWeight(){
-  return SHAPES[state.shape].weight + MATERIALS[state.material].weight + (state.protector ? 5 : 0);
-}
-
-function render(){
-  const shape = SHAPES[state.shape];
-  ["clipPath1","clipPath2","frame"].forEach(id => $(id).setAttribute("d", shape.d));
-  $("frame").setAttribute("stroke", state.frame);
-  $("throat").setAttribute("stroke", state.frame);
-  $("cap").setAttribute("fill", state.frame);
-  $("faceBase").setAttribute("fill", state.face);
-  $("grip").setAttribute("fill", state.grip);
-  $("texture").style.display = state.material === "glass" ? "none" : "";
-  $("carbon").setAttribute("width", state.material === "c18k" ? 5 : state.material === "c12k" ? 6 : 8);
-  // Protector: alleen bovenste rand
-  $("protector").setAttribute("d", state.protector ? "M68 60 C100 26 200 26 232 60" : "");
-  $("protector").setAttribute("stroke", "#1a1a1a");
-  drawDesign();
-
-  const t = $("faceText");
-  const txt = state.text.trim().toUpperCase();
-  t.textContent = txt;
-  t.setAttribute("fill", state.textColor);
-  t.setAttribute("font-size", txt.length > 8 ? 26 : txt.length > 5 ? 34 : 42);
-
-  // Actieve opties
-  [["optShape","shape"],["optMaterial","material"],["optCore","core"],["optDesign","design"]].forEach(([c,k]) => {
-    $(c).querySelectorAll(".opt").forEach(b => b.classList.toggle("active", b.dataset.id === state[k]));
-  });
-  document.querySelectorAll(".swatches").forEach(w => {
-    const k = w.dataset.key;
-    w.querySelectorAll(".sw").forEach(s => s.classList.toggle("active", s.dataset.color.toLowerCase() === state[k].toLowerCase()));
-  });
-  $("lblShape").textContent = shape.name;
-  $("lblMaterial").textContent = MATERIALS[state.material].name;
-  $("lblCore").textContent = CORES[state.core].name;
-  $("lblDesign").textContent = DESIGNS[state.design].name;
-
-  if($("textInput").value !== state.text) $("textInput").value = state.text;
-  $("exProtector").checked = state.protector;
-  $("exOvergrip").checked = state.overgrip;
-  $("exCover").checked = state.cover;
-
-  $("price").textContent = fmt(calcPrice());
-  $("weight").textContent = `± ${calcWeight()} g · ${shape.note}`;
-
-  try { history.replaceState(null, "", "#" + encodeState()); } catch(e) {}
-}
-
-function encodeState(){ return btoa(unescape(encodeURIComponent(JSON.stringify(state)))); }
-function loadFromHash(){
-  if(!location.hash || location.hash.length < 3) return;
-  try {
-    const s = JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(1)))));
-    state = {...defaults, ...s};
-  } catch(e) {}
-}
-
-function toast(msg){
-  const t = $("toast"); t.textContent = msg; t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2200);
-}
-
-function summaryRows(){
-  const rows = [
-    ["Vorm", SHAPES[state.shape].name],
-    ["Materiaal", MATERIALS[state.material].name],
-    ["Kern", CORES[state.core].name],
-    ["Design", DESIGNS[state.design].name],
-    ["Kleur frame", state.frame],
-    ["Kleur blad", state.face],
-    ["Accentkleur", state.accent],
-    ["Kleur grip", state.grip]
-  ];
-  if(state.text.trim()) rows.push(["Tekst", state.text.trim().toUpperCase()]);
-  if(state.protector) rows.push(["Frame-protector", "ja"]);
-  if(state.overgrip) rows.push(["Extra overgrips", "3 stuks"]);
-  if(state.cover) rows.push(["Thermo-hoes", "ja"]);
-  rows.push(["Gewicht", `± ${calcWeight()} g`]);
-  rows.push(["Totaal", fmt(calcPrice())]);
-  return rows;
-}
-
-// Events
-$("textInput").addEventListener("input", e => { state.text = e.target.value; render(); });
-$("exProtector").addEventListener("change", e => { state.protector = e.target.checked; render(); });
-$("exOvergrip").addEventListener("change", e => { state.overgrip = e.target.checked; render(); });
-$("exCover").addEventListener("change", e => { state.cover = e.target.checked; render(); });
-
-$("randomBtn").onclick = () => {
-  const pick = arr => arr[Math.floor(Math.random()*arr.length)];
-  state.shape = pick(Object.keys(SHAPES));
-  state.material = pick(Object.keys(MATERIALS));
-  state.design = pick(Object.keys(DESIGNS));
-  state.frame = pick(PALETTE); state.face = pick(PALETTE);
-  do { state.accent = pick(PALETTE); } while(state.accent === state.face);
-  state.grip = pick(PALETTE);
-  render();
-};
-$("shareBtn").onclick = async () => {
-  try { await navigator.clipboard.writeText(location.href); toast("Link naar je ontwerp gekopieerd!"); }
-  catch(e){ prompt("Kopieer deze link:", location.href); }
-};
-$("orderBtn").onclick = () => {
-  $("summaryList").innerHTML = summaryRows().map(([k,v]) => `<li><span>${k}</span><span>${v}</span></li>`).join("");
-  $("modal").classList.add("open");
-};
-$("closeModal").onclick = () => $("modal").classList.remove("open");
-$("modal").onclick = e => { if(e.target.id === "modal") $("modal").classList.remove("open"); };
-$("confirmOrder").onclick = async () => {
-  const text = "Bestelaanvraag PadelForge\n" + summaryRows().map(([k,v]) => `${k}: ${v}`).join("\n") + "\nOntwerp: " + location.href;
-  try { await navigator.clipboard.writeText(text); toast("Bestelaanvraag gekopieerd!"); }
-  catch(e){ prompt("Kopieer je bestelaanvraag:", text); }
-};
-
-// Init
-buildOptions("optShape", SHAPES, "shape");
-buildOptions("optMaterial", MATERIALS, "material");
-buildOptions("optCore", CORES, "core");
-buildOptions("optDesign", DESIGNS, "design");
-buildSwatches();
-drawHoles();
-drawGripLines();
-loadFromHash();
-render();
+  v.update(cfg, makeDesignCanvas(cfg));
+  // a drag on the 3D view should not open the link
+  let moved = false;
+  a.addEventListener('pointerdown', () => moved = false);
+  a.addEventListener('pointermove', e => { if (e.buttons) moved = true; });
+  a.addEventListener('click', e => { if (moved) e.preventDefault(); });
+});
 </script>
 </body>
 </html>
