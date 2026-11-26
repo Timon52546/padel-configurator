@@ -248,16 +248,33 @@ export function drawDesign(ctx, w, h, cfg, images) {
 }
 
 // ---------- 3D model ----------
-function gripTexture(color) {
-  const c = document.createElement('canvas'); c.width = 128; c.height = 512;
+function gripTexture(color, text, textColor) {
+  // 512x612 keeps the same pixel density around and along the handle, so text is not stretched
+  const c = document.createElement('canvas'); c.width = 512; c.height = 612;
   const g = c.getContext('2d');
-  g.fillStyle = color; g.fillRect(0, 0, 128, 512);
-  g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 6;
-  for (let y = -128; y < 640; y += 26) { g.beginPath(); g.moveTo(0, y); g.lineTo(128, y + 60); g.stroke(); }
+  g.fillStyle = color; g.fillRect(0, 0, 512, 612);
+  g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 7;
+  for (let y = -300; y < 700; y += 30) { g.beginPath(); g.moveTo(0, y); g.lineTo(512, y + 120); g.stroke(); }
   g.strokeStyle = 'rgba(255,255,255,0.08)'; g.lineWidth = 2;
-  for (let y = -128; y < 640; y += 26) { g.beginPath(); g.moveTo(0, y + 5); g.lineTo(128, y + 65); g.stroke(); }
+  for (let y = -300; y < 700; y += 30) { g.beginPath(); g.moveTo(0, y + 6); g.lineTo(512, y + 126); g.stroke(); }
+  if (text && text.trim()) {
+    g.save();
+    g.translate(256, 306);
+    g.rotate(-Math.PI / 2);
+    const label = text.trim().toUpperCase();
+    let size = 70;
+    g.font = `700 ${size}px "Space Grotesk", sans-serif`;
+    while (g.measureText(label).width > 540 && size > 30) { size -= 4; g.font = `700 ${size}px "Space Grotesk", sans-serif`; }
+    if (g.letterSpacing !== undefined) g.letterSpacing = '4px';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = textColor || '#ffffff';
+    g.fillText(label, 0, 0);
+    g.restore();
+  }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
-  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 2);
+  t.wrapS = THREE.RepeatWrapping;
+  t.offset.x = 0.5; // canvas centre faces the front of the handle
+  t.anisotropy = 8;
   return t;
 }
 
@@ -383,10 +400,11 @@ export function createRacket() {
     mats.frame.roughness = finish === 'matte' ? 0.7 : finish === 'metal' ? 0.22 : 0.3;
     mats.frame.clearcoat = finish === 'matte' ? 0 : 1;
     mats.cap.color.set(cfg.frame);
-    if (gripColor !== cfg.grip) {
-      gripColor = cfg.grip;
+    const gripKey = [cfg.grip, cfg.gripText || '', cfg.gripTextColor || ''].join('|');
+    if (gripColor !== gripKey) {
+      gripColor = gripKey;
       if (mats.grip.map) mats.grip.map.dispose();
-      mats.grip.map = gripTexture(cfg.grip);
+      mats.grip.map = gripTexture(cfg.grip, cfg.gripText, cfg.gripTextColor);
       mats.grip.needsUpdate = true;
     }
   }
@@ -522,7 +540,7 @@ export const PRESETS = {
     label: 'Neon Strike', shape: 'diamond', shapeParams: { ...SHAPES.diamond }, design: 'bolt', holes: 'small',
     face: '#0d0f14', accent: '#c6ff3d', accent2: '#ffffff', frame: '#0d0f14', grip: '#c6ff3d',
     text: 'FORGE', textColor: '#ffffff', font: 'grotesk', textSize: 0.09, textY: 0.78, textVertical: false,
-    material: 'c12k', core: 'hard', finish: 'gloss', stickers: []
+    material: 'c12k', core: 'hard', finish: 'gloss', stickers: [], gripText: 'NEON', gripTextColor: '#0d0f14'
   },
   ocean: {
     label: 'Deep Ocean', shape: 'teardrop', shapeParams: { ...SHAPES.teardrop }, design: 'waves', holes: 'small',
@@ -541,5 +559,11 @@ export const PRESETS = {
     face: '#16181d', accent: '#2a2e37', accent2: '#ff4d2e', frame: '#ff4d2e', grip: '#16181d',
     text: '', textColor: '#ff4d2e', font: 'mono', textSize: 0.08, textY: 0.5, textVertical: false,
     material: 'c18k', core: 'hard', finish: 'metal', stickers: [{ type: 'stripe', x: 0.5, y: 0.72, size: 0.16, rot: -20, color: '#ff4d2e' }]
+  },
+  voorbeeld: {
+    label: 'TIMON', shape: 'teardrop', shapeParams: { ...SHAPES.teardrop }, design: 'stripes', holes: 'small',
+    face: '#0b2f8a', accent: '#c6ff3d', accent2: '#c6ff3d', frame: '#0d0f14', grip: '#0d0f14',
+    text: '', textColor: '#ffffff', font: 'grotesk', textSize: 0.1, textY: 0.5, textVertical: false,
+    material: 'c12k', core: 'medium', finish: 'gloss', stickers: [], gripText: 'TIMON', gripTextColor: '#ffffff'
   }
 };
