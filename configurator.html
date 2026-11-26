@@ -131,6 +131,7 @@
       <button data-view="angle">Schuin</button>
       <button data-view="side">Zij</button>
       <button data-view="back">Achter</button>
+      <button data-view="bottom">Onderkant</button>
       <button id="spinBtn">↻ Auto</button>
     </div>
   </section>
@@ -198,7 +199,7 @@
           <label class="toggle">Verticaal plaatsen<input type="checkbox" id="tVert"></label>
         </div>
         <div class="sec"><h3>Tekstkleur</h3><div class="color-row" style="border:0;padding:0"><div class="sw-wrap" style="max-width:none;justify-content:flex-start;flex:1" id="textSw"></div><label class="picker"><input type="color" id="textColor"></label></div></div>
-        <div class="sec"><h3>Tekst op het handvat <em>+ €5</em></h3><input type="text" id="gripTextInput" maxlength="10" placeholder="Bv. je naam"><div class="color-row" style="border:0;padding:12px 0 0"><div class="sw-wrap" style="max-width:none;justify-content:flex-start;flex:1" id="gripTextSw"></div><label class="picker"><input type="color" id="gripTextColor"></label></div></div>
+        <div class="sec" id="capSec"><h3>Naam onderaan het handvat <em>+ €5</em></h3><p style="font-size:12px;color:var(--muted);margin:-4px 0 10px">Op de ronde eindkap. De racket draait vanzelf naar de onderkant.</p><input type="text" id="gripTextInput" maxlength="10" placeholder="Je naam"><div class="color-row" style="border:0;padding:12px 0 0"><div class="sw-wrap" style="max-width:none;justify-content:flex-start;flex:1" id="gripTextSw"></div><label class="picker"><input type="color" id="gripTextColor"></label></div></div>
       </div>
 
       <!-- 5 SPECS -->
@@ -369,6 +370,9 @@ $('textColor').oninput = e => { state.textColor = e.target.value; update(); };
 swatches($('gripTextSw'), c => state.gripTextColor = c); $('gripTextSw').dataset.k = 'gripTextColor';
 $('gripTextColor').oninput = e => { state.gripTextColor = e.target.value; update(); };
 $('gripTextInput').oninput = e => { state.gripText = e.target.value; update(); };
+const showCap = () => { viewer.controls.autoRotate = false; $('spinBtn').classList.remove('on'); document.querySelectorAll('[data-view]').forEach(x => x.classList.toggle('on', x.dataset.view === 'bottom')); viewer.view('bottom'); };
+$('capSec').addEventListener('pointerdown', showCap);
+$('gripTextInput').addEventListener('focus', showCap);
 swatches($('selSw'), c => { if(state.stickers[selected]) state.stickers[selected].color = c; });
 $('selColor').oninput = e => { if(state.stickers[selected]){ state.stickers[selected].color = e.target.value; update(); } };
 
@@ -527,7 +531,7 @@ function summaryRows(){
   ];
   if(state.stickers.length) rows.push(['Vormen / logo', state.stickers.length + ' stuks']);
   if(state.text.trim()) rows.push(['Tekst', state.text.trim().toUpperCase()]);
-  if((state.gripText||'').trim()) rows.push(['Tekst handvat', state.gripText.trim().toUpperCase()]);
+  if((state.gripText||'').trim()) rows.push(['Naam eindkap', state.gripText.trim().toUpperCase()]);
   if(state.protector) rows.push(['Frame-protector','ja']); if(state.overgrip) rows.push(['Extra overgrips','3 stuks']); if(state.cover) rows.push(['Thermo-hoes','ja']);
   rows.push(['Gewicht', '± ' + weight() + ' g'], ['Totaal', '<b style="color:var(--text)">€' + price() + '</b>']);
   return rows;
