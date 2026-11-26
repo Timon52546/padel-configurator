@@ -116,6 +116,7 @@
 <nav class="nav">
   <a href="/" class="logo"><i></i>Padel<b>Forge</b></a>
   <div class="actions">
+    <a class="btn hide-sm" href="quiz.html">Welke racket?</a>
     <button class="btn hide-sm" id="randomBtn">🎲 Verras me</button>
     <button class="btn hide-sm" id="downloadBtn">⤓ Afbeelding</button>
     <button class="btn" id="shareBtn">🔗 Deel ontwerp</button>
@@ -216,7 +217,7 @@
     </div>
 
     <div class="foot">
-      <div><div class="price" id="price">€0</div><small id="specLine"></small></div>
+      <div><div class="price" id="price">€0</div><small id="specLine"></small><small style="display:block;margin-top:3px;color:var(--muted)">Op bestelling gemaakt · 2–4 weken</small></div>
       <button class="btn primary big" id="orderBtn">Bestellen →</button>
     </div>
   </aside>
@@ -229,12 +230,15 @@
     <ul id="summary"></ul>
     <div class="row">
       <button class="btn" id="closeModal">Verder aanpassen</button>
-      <button class="btn primary" id="copyOrder">Bestelaanvraag kopiëren</button>
+      <button class="btn primary" id="payBtn">Afrekenen →</button>
     </div>
+    <p id="logoNote" style="display:none;font-size:12.5px;color:#ffcc00;margin-top:12px">Je gebruikt een eigen logo: mail het na de betaling naar boonen.timon@outlook.com (PNG of JPG), dan verwerken we het.</p>
+    <p style="font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.5">Op bestelling gemaakt · levering ongeveer 2–4 weken · gratis verzending in België · 2 jaar garantie · <a href="info.html" style="text-decoration:underline">alle info</a><br><button id="copyOrder" style="background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:12.5px;padding:0;margin-top:6px">Liever per mail bestellen? Kopieer je bestelaanvraag</button></p>
   </div>
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="site.js"></script>
 <script type="module">
 import { RacketViewer, SHAPES, DESIGNS, STICKERS, PRESETS, drawDesign, drawSticker, textureSize, outlineInCanvas } from './racket.js';
 
@@ -265,8 +269,12 @@ function loadHash(){
     if(p){ state = {...structuredClone(DEFAULT), ...structuredClone(p)}; delete state.label; }
     return;
   }
-  try { state = {...structuredClone(DEFAULT), ...JSON.parse(decodeURIComponent(escape(atob(h))))}; } catch(e){}
+  try { const o = JSON.parse(decodeURIComponent(escape(atob(h)))); if(o.shape && !o.shapeParams && SHAPES[o.shape]) o.shapeParams = {...SHAPES[o.shape]}; state = {...structuredClone(DEFAULT), ...o}; } catch(e){}
 }
+window.padelApplyDesign = d => {
+  const o = window.PF.sanitize(d); if(o.shape && SHAPES[o.shape]) o.shapeParams = {...SHAPES[o.shape]};
+  state = {...state, ...o}; update(); viewer.view('front');
+};
 function saveHash(){
   const s = {...state, stickers: state.stickers.filter(x => x.type !== 'image')};
   try { history.replaceState(null, '', '#' + btoa(unescape(encodeURIComponent(JSON.stringify(s))))); } catch(e){}
@@ -543,11 +551,22 @@ $('orderBtn').onclick = () => {
   setTimeout(() => {
     $('orderImg').src = viewer.snapshot();
     $('summary').innerHTML = summaryRows().map(([k,v]) => `<li><span>${k}</span><span>${v}</span></li>`).join('');
+    $('logoNote').style.display = state.stickers.some(x => x.type === 'image') ? 'block' : 'none';
     $('modal').classList.add('open');
   }, 700);
 };
 $('closeModal').onclick = () => $('modal').classList.remove('open');
 $('modal').onclick = e => { if(e.target.id === 'modal') $('modal').classList.remove('open'); };
+$('payBtn').onclick = async () => {
+  saveHash(); const b = $('payBtn'); b.textContent = 'Even geduld…'; b.disabled = true;
+  try {
+    const r = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: {...state, stickers: state.stickers.map(x => ({type: x.type}))}, link: location.href }) });
+    const d = await r.json();
+    if(r.ok && d.url){ location.href = d.url; return; }
+    toast(r.status === 501 ? 'Online betalen is nog niet actief. Kopieer je bestelaanvraag hieronder.' : 'Betaling starten mislukt, probeer opnieuw.');
+  } catch(e){ toast('Betaling starten mislukt, probeer opnieuw.'); }
+  b.textContent = 'Afrekenen →'; b.disabled = false;
+};
 $('copyOrder').onclick = async () => {
   saveHash();
   const text = 'Bestelaanvraag PadelForge\n' + summaryRows().map(([k,v]) => k + ': ' + v.replace(/<[^>]+>/g,'')).join('\n') + '\nOntwerp: ' + location.href;
