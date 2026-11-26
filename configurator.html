@@ -198,6 +198,7 @@
           <label class="toggle">Verticaal plaatsen<input type="checkbox" id="tVert"></label>
         </div>
         <div class="sec"><h3>Tekstkleur</h3><div class="color-row" style="border:0;padding:0"><div class="sw-wrap" style="max-width:none;justify-content:flex-start;flex:1" id="textSw"></div><label class="picker"><input type="color" id="textColor"></label></div></div>
+        <div class="sec"><h3>Tekst op het handvat <em>+ €5</em></h3><input type="text" id="gripTextInput" maxlength="10" placeholder="Bv. je naam"><div class="color-row" style="border:0;padding:12px 0 0"><div class="sw-wrap" style="max-width:none;justify-content:flex-start;flex:1" id="gripTextSw"></div><label class="picker"><input type="color" id="gripTextColor"></label></div></div>
       </div>
 
       <!-- 5 SPECS -->
@@ -248,7 +249,7 @@ const DEFAULT = {
   shape:'teardrop', shapeParams:{...SHAPES.teardrop}, holes:'small', design:'stripes',
   face:'#2e7bff', accent:'#c6ff3d', accent2:'#ffffff', frame:'#0d0f14', grip:'#0d0f14',
   text:'', textColor:'#ffffff', font:'grotesk', textSize:0.1, textY:0.5, textVertical:false,
-  material:'c3k', core:'medium', finish:'gloss', protector:false, overgrip:false, cover:false, stickers:[]
+  material:'c3k', core:'medium', finish:'gloss', protector:false, overgrip:false, cover:false, stickers:[], gripText:'', gripTextColor:'#ffffff'
 };
 let state = structuredClone(DEFAULT);
 const images = {};
@@ -365,6 +366,9 @@ COLOR_FIELDS.forEach(([k,name,desc]) => {
 });
 swatches($('textSw'), c => state.textColor = c); $('textSw').dataset.k = 'textColor';
 $('textColor').oninput = e => { state.textColor = e.target.value; update(); };
+swatches($('gripTextSw'), c => state.gripTextColor = c); $('gripTextSw').dataset.k = 'gripTextColor';
+$('gripTextColor').oninput = e => { state.gripTextColor = e.target.value; update(); };
+$('gripTextInput').oninput = e => { state.gripText = e.target.value; update(); };
 swatches($('selSw'), c => { if(state.stickers[selected]) state.stickers[selected].color = c; });
 $('selColor').oninput = e => { if(state.stickers[selected]){ state.stickers[selected].color = e.target.value; update(); } };
 
@@ -434,6 +438,7 @@ function price(){
   let p = BASE + MATERIALS[state.material].price + CORES[state.core].price + FINISHES[state.finish].price + DESIGNS[state.design].price;
   state.stickers.forEach(s => p += s.type === 'image' ? 15 : 3);
   if(state.text.trim()) p += 12;
+  if((state.gripText||'').trim()) p += 5;
   if(state.protector) p += 9; if(state.overgrip) p += 6; if(state.cover) p += 15;
   return p;
 }
@@ -456,6 +461,8 @@ function update(full = true){
   document.querySelectorAll('input[type=color][data-k]').forEach(i => i.value = state[i.dataset.k]);
   document.querySelectorAll('[data-hex]').forEach(el => el.textContent = state[el.dataset.hex].toUpperCase());
   $('textColor').value = state.textColor;
+  $('gripTextColor').value = state.gripTextColor || '#ffffff';
+  if($('gripTextInput').value !== (state.gripText||'')) $('gripTextInput').value = state.gripText || '';
   $('lblShape').textContent = shapeLabel(); $('lblDesign').textContent = DESIGNS[state.design].name;
   $('lblMat').textContent = MATERIALS[state.material].name; $('lblCore').textContent = CORES[state.core].name; $('lblFinish').textContent = FINISHES[state.finish].name;
   $('vWidth').textContent = Math.round(state.shapeParams.width*100) + '%';
@@ -520,6 +527,7 @@ function summaryRows(){
   ];
   if(state.stickers.length) rows.push(['Vormen / logo', state.stickers.length + ' stuks']);
   if(state.text.trim()) rows.push(['Tekst', state.text.trim().toUpperCase()]);
+  if((state.gripText||'').trim()) rows.push(['Tekst handvat', state.gripText.trim().toUpperCase()]);
   if(state.protector) rows.push(['Frame-protector','ja']); if(state.overgrip) rows.push(['Extra overgrips','3 stuks']); if(state.cover) rows.push(['Thermo-hoes','ja']);
   rows.push(['Gewicht', '± ' + weight() + ' g'], ['Totaal', '<b style="color:var(--text)">€' + price() + '</b>']);
   return rows;
