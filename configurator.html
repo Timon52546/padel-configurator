@@ -373,6 +373,8 @@ $('gripTextInput').oninput = e => { state.gripText = e.target.value; update(); }
 const showCap = () => { viewer.controls.autoRotate = false; $('spinBtn').classList.remove('on'); document.querySelectorAll('[data-view]').forEach(x => x.classList.toggle('on', x.dataset.view === 'bottom')); viewer.view('bottom'); };
 $('capSec').addEventListener('pointerdown', showCap);
 $('gripTextInput').addEventListener('focus', showCap);
+const showFront = () => { document.querySelectorAll('[data-view]').forEach(x => x.classList.toggle('on', x.dataset.view === 'front')); viewer.view('front'); };
+document.querySelector('.panel').addEventListener('pointerdown', e => { if (!e.target.closest('#capSec') && document.querySelector('[data-view="bottom"]').classList.contains('on')) showFront(); });
 swatches($('selSw'), c => { if(state.stickers[selected]) state.stickers[selected].color = c; });
 $('selColor').oninput = e => { if(state.stickers[selected]){ state.stickers[selected].color = e.target.value; update(); } };
 
