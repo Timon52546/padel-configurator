@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PadelForge · Ontwerp je eigen padelracket</title>
+<meta name="description" content="Ontwerp je eigen padelracket: kies vorm, kleuren, materiaal en je eigen tekst.">
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --line:#262b36; --text:#eef1f6; --muted:#8b93a5;
+    --accent:#c6ff3d; --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid var(--line)}
+  .logo{font-weight:900;font-size:20px;letter-spacing:-.5px}
+  .logo span{color:var(--accent)}
+  header nav{display:flex;gap:10px}
+  .btn{border:1px solid var(--line);background:transparent;color:var(--text);padding:9px 14px;border-radius:10px;font-size:14px;cursor:pointer;font-weight:600}
+  .btn:hover{border-color:var(--muted)}
+  .btn.primary{background:var(--accent);color:#111;border-color:var(--accent)}
+  .btn.primary:hover{filter:brightness(1.08)}
+  main{display:grid;grid-template-columns:1.1fr 1fr;gap:0;min-height:calc(100vh - 66px)}
+  .stage{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+         background:radial-gradient(circle at 50% 40%,#e9edf3 0%,#b9c0cc 75%);padding:24px}
+  .stage svg{height:min(78vh,640px);width:auto;filter:drop-shadow(0 30px 40px rgba(0,0,0,.55));transition:transform .4s}
+  .stage svg:hover{transform:rotate(-4deg) scale(1.02)}
+  .stage .hint{color:#4a5263;font-size:13px;margin-top:10px}
+  .panel{padding:28px;border-left:1px solid var(--line);background:var(--panel);overflow-y:auto}
+  h1{font-size:28px;letter-spacing:-.6px;margin-bottom:6px}
+  .sub{color:var(--muted);margin-bottom:22px;font-size:15px}
+  .group{border-top:1px solid var(--line);padding:18px 0}
+  .group h3{font-size:13px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between}
+  .group h3 em{font-style:normal;color:var(--text);text-transform:none;letter-spacing:0}
+  .options{display:flex;flex-wrap:wrap;gap:8px}
+  .opt{border:1px solid var(--line);background:#1d212a;color:var(--text);padding:10px 13px;border-radius:10px;cursor:pointer;font-size:14px;display:flex;flex-direction:column;gap:2px;text-align:left;min-width:96px}
+  .opt small{color:var(--muted);font-size:12px}
+  .opt:hover{border-color:var(--muted)}
+  .opt.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .swatches{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+  .sw{width:32px;height:32px;border-radius:50%;border:2px solid transparent;cursor:pointer;outline:1px solid var(--line);outline-offset:2px}
+  .sw.active{outline:2px solid var(--accent)}
+  .sw-custom{position:relative;width:32px;height:32px;border-radius:50%;overflow:hidden;outline:1px dashed var(--muted);outline-offset:2px;cursor:pointer;
+             background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red)}
+  .sw-custom input{opacity:0;position:absolute;inset:0;width:100%;height:100%;cursor:pointer}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  input[type=text]{flex:1;min-width:160px;background:#1d212a;border:1px solid var(--line);color:var(--text);padding:11px 12px;border-radius:10px;font-size:15px}
+  input[type=text]:focus{outline:none;border-color:var(--accent)}
+  .check{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:#1d212a}
+  .check input{accent-color:var(--accent);width:18px;height:18px}
+  .check span small{display:block;color:var(--muted);font-size:12px}
+  .summary{position:sticky;bottom:0;background:linear-gradient(transparent,var(--panel) 20%);padding-top:22px;margin-top:6px}
+  .price-box{display:flex;align-items:center;justify-content:space-between;background:#0f1115;border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+  .price{font-size:30px;font-weight:900;letter-spacing:-1px}
+  .price-box small{color:var(--muted);display:block;font-size:12px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
+  .modal.open{display:flex}
+  .modal .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;max-width:460px;width:100%;padding:26px}
+  .modal h2{margin-bottom:12px}
+  .modal ul{list-style:none;margin:12px 0 18px}
+  .modal li{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .modal li span:last-child{color:var(--muted)}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--accent);color:#111;padding:10px 16px;border-radius:10px;font-weight:700;transition:transform .3s;z-index:20}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  @media (max-width:860px){
+    main{grid-template-columns:1fr}
+    .stage{position:relative;height:auto;padding:30px 10px}
+    .stage svg{height:52vh}
+    .panel{border-left:none;border-top:1px solid var(--line)}
+    header nav .btn.hide-sm{display:none}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Padel<span>Forge</span></div>
+  <nav>
+    <button class="btn hide-sm" id="randomBtn">🎲 Verras me</button>
+    <button class="btn" id="shareBtn">🔗 Deel ontwerp</button>
+  </nav>
+</header>
+
+<main>
+  <section class="stage">
+    <svg id="racket" viewBox="0 0 300 530" xmlns="http://www.w3.org/2000/svg" aria-label="Voorbeeld van je padelracket">
+      <defs>
+        <clipPath id="faceClip"><path id="clipPath1" d=""/></clipPath>
+        <clipPath id="holeClip"><path id="clipPath2" d="" transform="translate(150 175) scale(0.8) translate(-150 -175)"/></clipPath>
+        <pattern id="carbon" width="8" height="8" patternUnits="userSpaceOnUse">
+          <rect width="8" height="8" fill="#000" fill-opacity="0"/>
+          <rect width="4" height="4" fill="#fff" fill-opacity=".05"/>
+          <rect x="4" y="4" width="4" height="4" fill="#fff" fill-opacity=".05"/>
+        </pattern>
+        <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity=".28"/>
+          <stop offset=".45" stop-color="#fff" stop-opacity="0"/>
+          <stop offset="1" stop-color="#000" stop-opacity=".25"/>
+        </linearGradient>
+        <linearGradient id="fadeGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" id="fadeA"/>
+          <stop offset="1" id="fadeB"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Hals (throat) -->
+      <path id="throat" d="M104 318 L138 402 L162 402 L196 318" fill="none" stroke-width="15" stroke-linejoin="round"/>
+      <!-- Handvat -->
+      <rect id="grip" x="133" y="398" width="34" height="112" rx="9"/>
+      <g id="gripLines" stroke="#000" stroke-opacity=".22" stroke-width="2"></g>
+      <rect id="cap" x="130" y="500" width="40" height="18" rx="7"/>
+
+      <!-- Blad -->
+      <g clip-path="url(#faceClip)">
+        <rect id="faceBase" x="0" y="0" width="300" height="400"/>
+        <g id="designLayer"></g>
+        <rect id="texture" x="0" y="0" width="300" height="400" fill="url(#carbon)"/>
+        <g id="holes" clip-path="url(#holeClip)"></g>
+        <text id="faceText" x="150" y="190" text-anchor="middle" dominant-baseline="middle"
+              font-family="system-ui,Segoe UI,sans-serif" font-weight="900" letter-spacing="2"></text>
+        <rect x="0" y="0" width="300" height="400" fill="url(#shine)"/>
+      </g>
+      <!-- Frame -->
+      <path id="frame" d="" fill="none" stroke-width="13"/>
+      <path id="protector" d="" fill="none" stroke-width="15" stroke-linecap="round"/>
+    </svg>
+    <p class="hint">Live voorbeeld · elke keuze past het racket meteen aan</p>
+  </section>
+
+  <section class="panel">
+    <h1>Ontwerp je eigen racket</h1>
+    <p class="sub">Kies vorm, materiaal, kleuren en je eigen tekst. Je ziet de prijs live.</p>
+
+    <div class="group">
+      <h3>Vorm <em id="lblShape"></em></h3>
+      <div class="options" id="optShape"></div>
+    </div>
+
+    <div class="group">
+      <h3>Materiaal blad <em id="lblMaterial"></em></h3>
+      <div class="options" id="optMaterial"></div>
+    </div>
+
+    <div class="group">
+      <h3>Kern <em id="lblCore"></em></h3>
+      <div class="options" id="optCore"></div>
+    </div>
+
+    <div class="group">
+      <h3>Kleur frame</h3>
+      <div class="swatches" data-key="frame"></div>
+    </div>
+
+    <div class="group">
+      <h3>Kleur blad</h3>
+      <div class="swatches" data-key="face"></div>
+    </div>
+
+    <div class="group">
+      <h3>Design <em id="lblDesign"></em></h3>
+      <div class="options" id="optDesign"></div>
+      <div style="height:12px"></div>
+      <h3>Accentkleur</h3>
+      <div class="swatches" data-key="accent"></div>
+    </div>
+
+    <div class="group">
+      <h3>Eigen tekst <em>+ €12</em></h3>
+      <div class="row">
+        <input type="text" id="textInput" maxlength="12" placeholder="Bv. je naam of bijnaam">
+      </div>
+      <div style="height:12px"></div>
+      <h3>Tekstkleur</h3>
+      <div class="swatches" data-key="textColor"></div>
+    </div>
+
+    <div class="group">
+      <h3>Kleur grip</h3>
+      <div class="swatches" data-key="grip"></div>
+    </div>
+
+    <div class="group">
+      <h3>Extra's</h3>
+      <label class="check"><span>Frame-protector<small>Beschermt de rand tegen schuren</small></span><span>+ €9 <input type="checkbox" id="exProtector"></span></label>
+      <label class="check"><span>Extra overgrips (3 stuks)<small>In dezelfde kleur als je grip</small></span><span>+ €6 <input type="checkbox" id="exOvergrip"></span></label>
+      <label class="check"><span>Thermo-hoes<small>Beschermt tegen hitte en kou</small></span><span>+ €15 <input type="checkbox" id="exCover"></span></label>
+    </div>
+
+    <div class="summary">
+      <div class="price-box">
+        <div><small>Jouw racket</small><div class="price" id="price">€0</div><small id="weight"></small></div>
+        <button class="btn primary" id="orderBtn">Bestellen →</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="modal">
+  <div class="card">
+    <h2>Jouw ontwerp</h2>
+    <p class="sub" style="margin:0">Overzicht van je custom racket.</p>
+    <ul id="summaryList"></ul>
+    <div class="row" style="justify-content:space-between">
+      <button class="btn" id="closeModal">Verder aanpassen</button>
+      <button class="btn primary" id="confirmOrder">Bestelaanvraag kopiëren</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SHAPES = {
+  round:    {name:"Rond",    note:"Controle", d:"M150 22 C238 22 270 92 270 178 C270 268 218 330 150 336 C82 330 30 268 30 178 C30 92 62 22 150 22 Z", weight:355},
+  teardrop: {name:"Traan",   note:"Allround", d:"M150 22 C232 22 264 80 264 160 C264 245 222 305 150 336 C78 305 36 245 36 160 C36 80 68 22 150 22 Z", weight:360},
+  diamond:  {name:"Diamant", note:"Power",    d:"M150 22 C212 22 254 58 267 115 C279 172 248 258 150 336 C52 258 21 172 33 115 C46 58 88 22 150 22 Z", weight:365}
+};
+const MATERIALS = {
+  glass: {name:"Glasvezel",   note:"Comfort · −€20", price:-20, weight:-5},
+  c3k:   {name:"Carbon 3K",   note:"Inbegrepen",     price:0,   weight:0},
+  c12k:  {name:"Carbon 12K",  note:"+€30",           price:30,  weight:-5},
+  c18k:  {name:"Carbon 18K",  note:"+€50",           price:50,  weight:-10}
+};
+const CORES = {
+  soft:   {name:"Soft EVA",   note:"Zacht · beginners", price:0},
+  medium: {name:"Medium EVA", note:"Balans",            price:0},
+  hard:   {name:"Hard EVA",   note:"Strak · +€10",      price:10}
+};
+const DESIGNS = {
+  solid:   {name:"Effen",       note:"Inbegrepen", price:0},
+  stripes: {name:"Strepen",     note:"+€10",       price:10},
+  fade:    {name:"Verloop",     note:"+€10",       price:10},
+  split:   {name:"Gesplitst",   note:"+€10",       price:10},
+  bolt:    {name:"Bliksem",     note:"+€15",       price:15}
+};
+const PALETTE = ["#111317","#ffffff","#c6ff3d","#ff4d2e","#2e7bff","#ffcc00","#ff3d9a","#8a5cff","#00c2a8","#9aa3b2"];
+const BASE_PRICE = 129;
+
+const defaults = {shape:"teardrop", material:"c3k", core:"medium", design:"stripes",
+  frame:"#111317", face:"#2e7bff", accent:"#c6ff3d", textColor:"#ffffff", grip:"#111317",
+  text:"", protector:false, overgrip:false, cover:false};
+let state = {...defaults};
+
+const $ = id => document.getElementById(id);
+const fmt = n => "€" + n.toFixed(0);
+
+function buildOptions(containerId, data, key){
+  const el = $(containerId);
+  el.innerHTML = "";
+  Object.entries(data).forEach(([id, o]) => {
+    const b = document.createElement("button");
+    b.className = "opt"; b.dataset.id = id;
+    b.innerHTML = `<b>${o.name}</b><small>${o.note}</small>`;
+    b.onclick = () => { state[key] = id; render(); };
+    el.appendChild(b);
+  });
+}
+
+function buildSwatches(){
+  document.querySelectorAll(".swatches").forEach(wrap => {
+    const key = wrap.dataset.key;
+    wrap.innerHTML = "";
+    PALETTE.forEach(c => {
+      const s = document.createElement("button");
+      s.className = "sw"; s.style.background = c; s.dataset.color = c; s.title = c;
+      s.onclick = () => { state[key] = c; render(); };
+      wrap.appendChild(s);
+    });
+    const custom = document.createElement("label");
+    custom.className = "sw-custom"; custom.title = "Eigen kleur";
+    const inp = document.createElement("input");
+    inp.type = "color";
+    inp.oninput = e => { state[key] = e.target.value; render(); };
+    custom.appendChild(inp);
+    wrap.appendChild(custom);
+  });
+}
+
+function drawDesign(){
+  const g = $("designLayer");
+  const a = state.accent;
+  let svg = "";
+  switch(state.design){
+    case "stripes":
+      for(let i=-300;i<400;i+=46){ svg += `<rect x="${i}" y="-50" width="14" height="520" fill="${a}" transform="rotate(28 150 180)"/>`; }
+      break;
+    case "fade":
+      $("fadeA").setAttribute("stop-color", state.face);
+      $("fadeB").setAttribute("stop-color", a);
+      svg = `<rect x="0" y="0" width="300" height="400" fill="url(#fadeGrad)"/>`;
+      break;
+    case "split":
+      svg = `<rect x="150" y="0" width="150" height="400" fill="${a}"/>`;
+      break;
+    case "bolt":
+      svg = `<path d="M175 30 L105 190 L148 190 L118 330 L205 150 L160 150 L190 30 Z" fill="${a}"/>`;
+      break;
+  }
+  g.innerHTML = svg;
+}
+
+function drawHoles(){
+  const g = $("holes");
+  let s = "";
+  for(let y=50; y<330; y+=21){
+    const offset = (Math.round((y-50)/21) % 2) ? 10.5 : 0;
+    for(let x=20+offset; x<290; x+=21){
+      s += `<circle cx="${x}" cy="${y}" r="4.2" fill="#000" fill-opacity=".45"/>`;
+    }
+  }
+  g.innerHTML = s;
+}
+
+function drawGripLines(){
+  let s = "";
+  for(let y=410;y<500;y+=10){ s += `<line x1="133" y1="${y}" x2="167" y2="${y+8}"/>`; }
+  $("gripLines").innerHTML = s;
+}
+
+function calcPrice(){
+  let p = BASE_PRICE + MATERIALS[state.material].price + CORES[state.core].price + DESIGNS[state.design].price;
+  if(state.text.trim()) p += 12;
+  if(state.protector) p += 9;
+  if(state.overgrip) p += 6;
+  if(state.cover) p += 15;
+  return p;
+}
+function calcWeight(){
+  return SHAPES[state.shape].weight + MATERIALS[state.material].weight + (state.protector ? 5 : 0);
+}
+
+function render(){
+  const shape = SHAPES[state.shape];
+  ["clipPath1","clipPath2","frame"].forEach(id => $(id).setAttribute("d", shape.d));
+  $("frame").setAttribute("stroke", state.frame);
+  $("throat").setAttribute("stroke", state.frame);
+  $("cap").setAttribute("fill", state.frame);
+  $("faceBase").setAttribute("fill", state.face);
+  $("grip").setAttribute("fill", state.grip);
+  $("texture").style.display = state.material === "glass" ? "none" : "";
+  $("carbon").setAttribute("width", state.material === "c18k" ? 5 : state.material === "c12k" ? 6 : 8);
+  // Protector: alleen bovenste rand
+  $("protector").setAttribute("d", state.protector ? "M68 60 C100 26 200 26 232 60" : "");
+  $("protector").setAttribute("stroke", "#1a1a1a");
+  drawDesign();
+
+  const t = $("faceText");
+  const txt = state.text.trim().toUpperCase();
+  t.textContent = txt;
+  t.setAttribute("fill", state.textColor);
+  t.setAttribute("font-size", txt.length > 8 ? 26 : txt.length > 5 ? 34 : 42);
+
+  // Actieve opties
+  [["optShape","shape"],["optMaterial","material"],["optCore","core"],["optDesign","design"]].forEach(([c,k]) => {
+    $(c).querySelectorAll(".opt").forEach(b => b.classList.toggle("active", b.dataset.id === state[k]));
+  });
+  document.querySelectorAll(".swatches").forEach(w => {
+    const k = w.dataset.key;
+    w.querySelectorAll(".sw").forEach(s => s.classList.toggle("active", s.dataset.color.toLowerCase() === state[k].toLowerCase()));
+  });
+  $("lblShape").textContent = shape.name;
+  $("lblMaterial").textContent = MATERIALS[state.material].name;
+  $("lblCore").textContent = CORES[state.core].name;
+  $("lblDesign").textContent = DESIGNS[state.design].name;
+
+  if($("textInput").value !== state.text) $("textInput").value = state.text;
+  $("exProtector").checked = state.protector;
+  $("exOvergrip").checked = state.overgrip;
+  $("exCover").checked = state.cover;
+
+  $("price").textContent = fmt(calcPrice());
+  $("weight").textContent = `± ${calcWeight()} g · ${shape.note}`;
+
+  try { history.replaceState(null, "", "#" + encodeState()); } catch(e) {}
+}
+
+function encodeState(){ return btoa(unescape(encodeURIComponent(JSON.stringify(state)))); }
+function loadFromHash(){
+  if(!location.hash || location.hash.length < 3) return;
+  try {
+    const s = JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(1)))));
+    state = {...defaults, ...s};
+  } catch(e) {}
+}
+
+function toast(msg){
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+function summaryRows(){
+  const rows = [
+    ["Vorm", SHAPES[state.shape].name],
+    ["Materiaal", MATERIALS[state.material].name],
+    ["Kern", CORES[state.core].name],
+    ["Design", DESIGNS[state.design].name],
+    ["Kleur frame", state.frame],
+    ["Kleur blad", state.face],
+    ["Accentkleur", state.accent],
+    ["Kleur grip", state.grip]
+  ];
+  if(state.text.trim()) rows.push(["Tekst", state.text.trim().toUpperCase()]);
+  if(state.protector) rows.push(["Frame-protector", "ja"]);
+  if(state.overgrip) rows.push(["Extra overgrips", "3 stuks"]);
+  if(state.cover) rows.push(["Thermo-hoes", "ja"]);
+  rows.push(["Gewicht", `± ${calcWeight()} g`]);
+  rows.push(["Totaal", fmt(calcPrice())]);
+  return rows;
+}
+
+// Events
+$("textInput").addEventListener("input", e => { state.text = e.target.value; render(); });
+$("exProtector").addEventListener("change", e => { state.protector = e.target.checked; render(); });
+$("exOvergrip").addEventListener("change", e => { state.overgrip = e.target.checked; render(); });
+$("exCover").addEventListener("change", e => { state.cover = e.target.checked; render(); });
+
+$("randomBtn").onclick = () => {
+  const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+  state.shape = pick(Object.keys(SHAPES));
+  state.material = pick(Object.keys(MATERIALS));
+  state.design = pick(Object.keys(DESIGNS));
+  state.frame = pick(PALETTE); state.face = pick(PALETTE);
+  do { state.accent = pick(PALETTE); } while(state.accent === state.face);
+  state.grip = pick(PALETTE);
+  render();
+};
+$("shareBtn").onclick = async () => {
+  try { await navigator.clipboard.writeText(location.href); toast("Link naar je ontwerp gekopieerd!"); }
+  catch(e){ prompt("Kopieer deze link:", location.href); }
+};
+$("orderBtn").onclick = () => {
+  $("summaryList").innerHTML = summaryRows().map(([k,v]) => `<li><span>${k}</span><span>${v}</span></li>`).join("");
+  $("modal").classList.add("open");
+};
+$("closeModal").onclick = () => $("modal").classList.remove("open");
+$("modal").onclick = e => { if(e.target.id === "modal") $("modal").classList.remove("open"); };
+$("confirmOrder").onclick = async () => {
+  const text = "Bestelaanvraag PadelForge\n" + summaryRows().map(([k,v]) => `${k}: ${v}`).join("\n") + "\nOntwerp: " + location.href;
+  try { await navigator.clipboard.writeText(text); toast("Bestelaanvraag gekopieerd!"); }
+  catch(e){ prompt("Kopieer je bestelaanvraag:", text); }
+};
+
+// Init
+buildOptions("optShape", SHAPES, "shape");
+buildOptions("optMaterial", MATERIALS, "material");
+buildOptions("optCore", CORES, "core");
+buildOptions("optDesign", DESIGNS, "design");
+buildSwatches();
+drawHoles();
+drawGripLines();
+loadFromHash();
+render();
+</script>
+</body>
+</html>
