@@ -277,7 +277,7 @@ function buildGeometries(shapeParams, holeStyle) {
   // Face with real holes
   const face = new THREE.Shape(innerPts);
   const area = scalePts(pts, 0.8);
-  const r = holeStyle === 'big' ? 0.075 : 0.055;
+  const r = holeStyle === 'big' ? 0.066 : 0.045;
   const step = holeStyle === 'big' ? 0.26 : 0.205;
   let row = 0;
   for (let y = bb.minY + 0.35; y < bb.maxY - 0.25; y += step * 0.88, row++) {
@@ -308,9 +308,9 @@ function buildGeometries(shapeParams, holeStyle) {
     new THREE.Vector2(0.07, by - 0.62), new THREE.Vector2(-0.07, by - 0.62)
   ]));
   const throatGeo = new THREE.ExtrudeGeometry(throat, {
-    depth: 0.3, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 3
+    depth: 0.22, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 3
   });
-  throatGeo.translate(0, 0, -0.15);
+  throatGeo.translate(0, 0, -0.11);
 
   return { faceGeo, frameGeo, throatGeo, bb, by };
 }
@@ -318,7 +318,7 @@ function buildGeometries(shapeParams, holeStyle) {
 export function createRacket() {
   const group = new THREE.Group();
   const mats = {
-    face: new THREE.MeshPhysicalMaterial({ roughness: 0.38, clearcoat: 1, clearcoatRoughness: 0.12 }),
+    face: new THREE.MeshPhysicalMaterial({ roughness: 0.38, clearcoat: 1, clearcoatRoughness: 0.22 }),
     holeWall: new THREE.MeshStandardMaterial({ color: 0x101114, roughness: 0.8 }),
     frame: new THREE.MeshPhysicalMaterial({ roughness: 0.3, metalness: 0.25, clearcoat: 1, clearcoatRoughness: 0.08 }),
     grip: new THREE.MeshStandardMaterial({ roughness: 0.85 }),
@@ -401,8 +401,8 @@ export class RacketViewer {
     this.container = container;
     const renderer = this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: !!opts.preserve });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMapping = THREE.NeutralToneMapping;
+    renderer.toneMappingExposure = 1.0;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.domElement.style.display = 'block';
     renderer.domElement.style.width = '100%';
@@ -412,11 +412,12 @@ export class RacketViewer {
     const scene = this.scene = new THREE.Scene();
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environmentIntensity = 0.55;
 
     this.camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
     this.camera.position.set(0, 0, opts.distance || 12.5);
 
-    const key = new THREE.DirectionalLight(0xffffff, 1.8); key.position.set(5, 7, 9); scene.add(key);
+    const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(5, 7, 9); scene.add(key);
     const rim = new THREE.DirectionalLight(opts.rimColor || 0xc6ff3d, 2.2); rim.position.set(-7, 3, -6); scene.add(rim);
     const fill = new THREE.DirectionalLight(0x88aaff, 0.6); fill.position.set(6, -4, -3); scene.add(fill);
 
