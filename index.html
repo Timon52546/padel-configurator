@@ -129,6 +129,8 @@
     <a href="#collectie">Collectie</a>
     <a href="#features">Waarom</a>
     <a href="#reviews">Reviews</a>
+    <a href="quiz.html">Welke racket?</a>
+    <a href="clubs.html">Clubs</a>
     <a href="#faq">FAQ</a>
   </div>
   <a href="configurator.html" class="btn primary">Ontwerp jouw racket →</a>
@@ -224,23 +226,34 @@
   <a href="configurator.html" class="btn big">Ontwerp jouw racket →</a>
 </div>
 
+<section class="block" id="op-bestelling">
+  <div class="head reveal"><div><span class="eyebrow">Op bestelling gemaakt</span><h2>Alleen gemaakt wat jij bestelt</h2></div></div>
+  <div class="faq reveal" style="max-width:860px">
+    <p style="color:#c3c9d6;line-height:1.65;font-size:17px">Jouw racket bestaat pas als jij hem ontwerpt. Geen overschotten en geen onverkochte voorraad, dus minder verspilling. Levering ongeveer 2 tot 4 weken, gratis verzending in België en 2 jaar garantie.</p>
+    <p style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="info.html">Levering &amp; garantie</a><a class="btn" href="info.html#ontwerphulp">Gratis ontwerphulp</a><a class="btn" href="clubs.html">Voor clubs &amp; bedrijven</a></p>
+  </div>
+</section>
+
 <section class="block" id="faq">
   <div class="head reveal"><div><span class="eyebrow">FAQ</span><h2>Veelgestelde vragen</h2></div></div>
   <div class="faq">
     <details class="reveal"><summary>Welke vorm past bij mij?</summary><p>Rond geeft de meeste controle en een grote sweet spot, ideaal voor beginners. Traan is een allrounder tussen controle en kracht. Diamant legt het gewicht hoger in de kop voor maximale power: vooral voor gevorderde, aanvallende spelers.</p></details>
     <details class="reveal"><summary>Wat is het verschil tussen carbon 3K, 12K en 18K?</summary><p>Het getal staat voor het aantal carbonvezels per bundel. Hoe hoger, hoe stijver en lichter het blad, en hoe meer kracht je meegeeft. Glasvezel is flexibeler en vergevingsgezinder.</p></details>
     <details class="reveal"><summary>Kan ik mijn eigen logo gebruiken?</summary><p>Ja. In de configurator upload je een PNG of JPG (bij voorkeur met transparante achtergrond), en daarna kun je het verslepen, vergroten en draaien op het blad.</p></details>
+    <details class="reveal"><summary>Hoelang duurt de levering?</summary><p>Elke racket wordt op bestelling gemaakt, dus reken op ongeveer 2 tot 4 weken. Verzending in België is gratis.</p></details>
+    <details class="reveal"><summary>Kan ik hulp krijgen bij mijn ontwerp?</summary><p>Ja, gratis. Vraag het aan de assistent linksonder of stuur je idee via de infopagina.</p></details>
     <details class="reveal"><summary>Hoe deel ik mijn ontwerp?</summary><p>Klik op "Deel ontwerp" in de configurator. Je krijgt een link waarmee iedereen exact jouw racket in 3D kan bekijken. Je kunt ook een afbeelding downloaden.</p></details>
   </div>
 </section>
 
 <footer>
   <div class="logo"><i></i>Padel<b>Forge</b></div>
-  <div>© 2026 PadelForge · Ontworpen door jou</div>
+  <div><a href="info.html">Info</a> · <a href="clubs.html">Clubs</a> · <a href="quiz.html">Quiz</a> · © 2026 PadelForge</div>
 </footer>
 
 <div class="toast" id="toast"></div>
 
+<script src="site.js"></script>
 <script type="module">
 import { RacketViewer, PRESETS, makeDesignCanvas } from './racket.js';
 
